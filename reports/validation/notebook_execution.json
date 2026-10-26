@@ -1,0 +1,89 @@
+{
+  "launcher_interpreter": "C:\\Users\\yudhi\\.local\\bin\\python3.12.exe",
+  "kernel": "seismic-python312",
+  "original_sha256_before": "8b157c44698eecf076f5469cf670df08829f4180d7b0d56142f11b7c665bf1cb",
+  "initial_reference_sha256": "ce01a450d6a9a56eb337ccf3906e6e5eafb1501951e907308cb8767fc6db2c97",
+  "matches_initial_reference": false,
+  "notebooks": [
+    {
+      "notebook": "notebooks\\00_panduan.ipynb",
+      "status": "PASS",
+      "seconds": 13.62,
+      "code_cells": 4,
+      "executed_cells": 4
+    },
+    {
+      "notebook": "notebooks\\01_data_collection\\01_data_collection.ipynb",
+      "status": "PASS",
+      "seconds": 10.33,
+      "code_cells": 6,
+      "executed_cells": 6
+    },
+    {
+      "notebook": "notebooks\\02_data_preprocessing\\02_data_preprocessing.ipynb",
+      "status": "PASS",
+      "seconds": 19.52,
+      "code_cells": 8,
+      "executed_cells": 8
+    },
+    {
+      "notebook": "notebooks\\03_eda\\03_eda.ipynb",
+      "status": "PASS",
+      "seconds": 41.23,
+      "code_cells": 9,
+      "executed_cells": 9
+    },
+    {
+      "notebook": "notebooks\\04_kmeans\\04_kmeans.ipynb",
+      "status": "PASS",
+      "seconds": 15.0,
+      "code_cells": 8,
+      "executed_cells": 8
+    },
+    {
+      "notebook": "notebooks\\05_dbscan\\05_dbscan.ipynb",
+      "status": "PASS",
+      "seconds": 20.09,
+      "code_cells": 7,
+      "executed_cells": 7
+    },
+    {
+      "notebook": "notebooks\\06_model_evaluation\\06_model_evaluation.ipynb",
+      "status": "PASS",
+      "seconds": 8.89,
+      "code_cells": 4,
+      "executed_cells": 4
+    },
+    {
+      "notebook": "notebooks\\07_temporal_analysis\\07_temporal_analysis.ipynb",
+      "status": "PASS",
+      "seconds": 24.06,
+      "code_cells": 5,
+      "executed_cells": 5
+    },
+    {
+      "notebook": "notebooks\\08_stability\\08_stability.ipynb",
+      "status": "PASS",
+      "seconds": 23.77,
+      "code_cells": 5,
+      "executed_cells": 5
+    },
+    {
+      "notebook": "notebooks\\09_testing_2026\\09_testing_2026.ipynb",
+      "status": "PASS",
+      "seconds": 10.39,
+      "code_cells": 6,
+      "executed_cells": 6
+    },
+    {
+      "notebook": "notebooks\\10_gis_mapping\\10_gis_mapping.ipynb",
+      "status": "PASS",
+      "seconds": 51.28,
+      "code_cells": 6,
+      "executed_cells": 6
+    }
+  ],
+  "original_sha256_after": "8b157c44698eecf076f5469cf670df08829f4180d7b0d56142f11b7c665bf1cb",
+  "original_unchanged": true,
+  "status": "PASS"
+}

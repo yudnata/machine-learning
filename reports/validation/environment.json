@@ -1,0 +1,29 @@
+{
+  "executable": "C:\\Users\\yudhi\\.local\\bin\\python3.12.exe",
+  "python_version": "3.12.11 (main, Aug 18 2025, 19:17:54) [MSC v.1944 64 bit (AMD64)]",
+  "imports": "PASS",
+  "projection": "PASS",
+  "packages": {
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "matplotlib": "3.11.2",
+    "seaborn": "0.13.2",
+    "requests": "2.34.2",
+    "pyproj": "3.8.0",
+    "folium": "0.20.0",
+    "branca": "0.8.2",
+    "joblib": "1.6.0",
+    "threadpoolctl": "3.7.0",
+    "ipykernel": "7.4.0",
+    "ipython": "9.17.1",
+    "nbformat": "5.11.1",
+    "nbclient": "0.11.0",
+    "jupyterlab": "4.6.4",
+    "pytest": "9.1.1",
+    "plotly": "6.9.0",
+    "geopandas": "1.2.0",
+    "shapely": "2.2.0"
+  }
+}

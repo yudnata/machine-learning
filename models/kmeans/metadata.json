@@ -1,0 +1,6 @@
+{
+  "prepared_sha256": "dfbf2b2e2e07360778f456c22553fa93aea790b069b43258bc6db0916d84ca7c",
+  "selected_k": 6,
+  "selection": "rata-rata silhouette 3 sampel tertinggi; tie-break DBI terendah dan k terkecil",
+  "fit_split": "train"
+}

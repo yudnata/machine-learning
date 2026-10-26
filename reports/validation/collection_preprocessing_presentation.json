@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "csv_sha256_before": {
+    "data\\raw\\events.csv": "49c388dd8bdbea156b1f8469f7a26e4f1b4e33888197c9e87fa1593fac2ca0a6",
+    "data\\processed\\events_clean.csv": "42084e73b4c6eec2442ea5b605a839b11cec2cb1bcaf077f62822947e50d6084",
+    "data\\processed\\events_rejected.csv": "f49b481f9076d93a2c9ee439b1cd8f09bde01c5fe8c969ffe105d06b7a8da4fa",
+    "data\\processed\\events_with_grid.csv": "c2fc1d3122690b69eaef94c16db8b7b26f293ad5305e99be04b76db64595e6dd",
+    "data\\processed\\panel.csv": "e375ba1609ca9dcc5066cd619b3fd830f2796d51285b1b8202d4be47c0f30a21",
+    "data\\processed\\features_scaled.csv": "0f3f94ecd2d43f71a86b1e29683dac897287b19c8b6ae8756b19d5f514e4ef2b"
+  },
+  "csv_sha256_after": {
+    "data\\raw\\events.csv": "49c388dd8bdbea156b1f8469f7a26e4f1b4e33888197c9e87fa1593fac2ca0a6",
+    "data\\processed\\events_clean.csv": "42084e73b4c6eec2442ea5b605a839b11cec2cb1bcaf077f62822947e50d6084",
+    "data\\processed\\events_rejected.csv": "f49b481f9076d93a2c9ee439b1cd8f09bde01c5fe8c969ffe105d06b7a8da4fa",
+    "data\\processed\\events_with_grid.csv": "c2fc1d3122690b69eaef94c16db8b7b26f293ad5305e99be04b76db64595e6dd",
+    "data\\processed\\panel.csv": "e375ba1609ca9dcc5066cd619b3fd830f2796d51285b1b8202d4be47c0f30a21",
+    "data\\processed\\features_scaled.csv": "0f3f94ecd2d43f71a86b1e29683dac897287b19c8b6ae8756b19d5f514e4ef2b"
+  },
+  "scaler_unchanged": true,
+  "preprocessing_metadata_preserved": true,
+  "other_notebooks_unchanged": true,
+  "reason": "Notebook result presentation updated; preprocessing data and model inputs identical.",
+  "notebook_outputs": {
+    "01_data_collection.ipynb": {
+      "executed_cells": 6,
+      "expected_counts_and_data_present": true
+    },
+    "02_data_preprocessing.ipynb": {
+      "executed_cells": 8,
+      "expected_counts_and_data_present": true
+    }
+  }
+}

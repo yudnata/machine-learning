@@ -1,0 +1,16 @@
+{
+  "train_period": "2021Q1-2025Q4",
+  "test_end_exclusive_utc": "2026-10-26",
+  "complete_quarters": [
+    "2026Q1",
+    "2026Q2",
+    "2026Q3"
+  ],
+  "partial_quarters": [
+    "2026Q4"
+  ],
+  "kmeans_distance_q99_training": 3.0170019689565786,
+  "dbscan_method": "core-radius extension, bukan predict bawaan; beberapa cluster core dalam eps = ambigu",
+  "dbscan_diagnostic_only": false,
+  "accuracy": "tidak dihitung karena tidak ada label ground truth"
+}

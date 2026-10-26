@@ -1,0 +1,50 @@
+# Environment dan konfigurasi lokal
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# Cache Python, Jupyter, dan pemeriksaan kode
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Hasil build Python
+build/
+dist/
+*.egg-info/
+
+# Data unduhan dan hasil preprocessing; dibuat ulang dari notebook 01-02
+/data/raw/
+/data/processed/
+
+# Model biner dan scaler; tabel hasil CSV/JSON tetap dapat disimpan di Git
+*.joblib
+*.pkl
+*.pickle
+
+# Peta keluaran notebook 10; aset dasar dan lisensi tetap disimpan
+/maps/*.html
+/maps/*.geojson
+
+# File sementara dan file sistem operasi
+*.log
+*.tmp
+*.temp
+*.bak
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini

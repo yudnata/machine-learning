@@ -1,0 +1,434 @@
+SLIDE 1
+Analisis Clustering Aktivitas Seismik Berbasis
+Grid Spasial di Indonesia
+Made Aditya Nugraha Arya Putra (2305551128)
+Gede Yudhi Adinata Putra Kurniawan (2305551142)
+Presented by
+
+
+SLIDE 2
+01
+Latar Belakang
+Indonesia memiliki aktivitas seismik yang tinggi akibat kondisi
+tektoniknya yang kompleks. Sepanjang tahun 2025, BMKG
+mencatat 18.546 kejadian gempa, termasuk 184 gempa
+bermagnitudo di atas 5 dan 964 gempa yang dirasakan.
+Banyaknya data kejadian gempa memerlukan analisis untuk
+mengetahui pola aktivitas secara spasial. Penelitian ini
+menggunakan data EMSC tahun 2025 serta algoritma K-
+Means dan DBSCAN untuk mengelompokkan pola aktivitas
+gempa dan memvisualisasikannya dalam bentuk peta zona
+aktivitas seismik di Indonesia.
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+
+
+SLIDE 3
+01
+Alasan memilih Topik
+Topik ini dipilih karena tingginya aktivitas gempa di Indonesia
+menghasilkan banyak data spasial yang dapat dianalisis lebih
+lanjut. Penelitian ini bertujuan menemukan pola aktivitas
+seismik antarwilayah menggunakan K-Means dan DBSCAN,
+kemudian memvisualisasikan hasilnya melalui GIS agar pola
+yang terbentuk dapat dianalisis secara geografis.
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+
+
+SLIDE 4
+02
+Rumusan Masalah
+Bagaimana karakteristik
+aktivitas gempa bumi di
+Indonesia sepanjang tahun
+2025 berdasarkan data
+EMSC?
+Bagaimana hasil
+pengelompokan wilayah
+menggunakan metode K-
+Means dan DBSCAN
+berdasarkan karakteristik
+aktivitas gempa?
+Metode clustering mana
+yang menghasilkan
+pengelompokan yang lebih
+baik berdasarkan hasil
+evaluasi?
+01
+02
+03
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Bagaimana karakteristik
+setiap cluster dapat
+diinterpretasikan menjadi
+zona aktivitas seismik relatif
+rendah, sedang, dan tinggi?
+04
+
+
+SLIDE 5
+02
+Tujuan Penelitian
+Mengolah data gempa
+bumi Indonesia tahun 2025
+dari EMSC.
+Mengelompokkan wilayah
+berdasarkan karakteristik
+aktivitas gempa
+menggunakan K-Means
+dan DBSCAN.
+Membandingkan kualitas
+clustering kedua algoritma
+menggunakan Silhouette
+Score dan Davies-Bouldin
+Index
+01
+02
+03
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Mengidentifikasi
+karakteristik setiap cluster
+dan memvisualisasikannya
+sebagai zona aktivitas
+seismik relatif rendah,
+sedang, dan tinggi.
+04
+
+
+SLIDE 6
+07
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Hasil Riset dan Gap
+
+
+SLIDE 7
+07
+Hasil Riset dan Gap
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+
+
+SLIDE 8
+01
+Hasil yang ingin Dicapai
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Dataset gempa Indonesia 2025 dari EMSC yang
+telah dibersihkan dan diolah.
+Dataset karakteristik aktivitas gempa per
+grid/wilayah.
+Hasil clustering menggunakan K-Means dan
+DBSCAN.
+Perbandingan kualitas kedua model.
+Model clustering yang paling sesuai berdasarkan
+evaluasi.
+Karakteristik masing-masing cluster.
+Peta zona aktivitas seismik relatif rendah, sedang,
+dan tinggi di Indonesia.
+
+
+SLIDE 9
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+01
+Alur Penelitian
+Penelitian membandingkan K-Means dan
+DBSCAN dalam mengelompokkan wilayah
+berdasarkan karakteristik aktivitas gempa,
+kemudian hasil clustering terbaik diinterpretasikan
+dan divisualisasikan secara spasial.
+
+
+SLIDE 10
+16
+PIC (Penanggung Jawab)
+Made Aditya Nugraha
+Gede Yudhi Adinata
+1. Data Collection
+2. Data Preprocessing
+4. K-Means
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+3. EDA
+5. DBSCAN
+6. Model Evaluation
+8. Visualization
+7. GIS & Mapping
+
+
+SLIDE 11
+Data Collection
+05
+Parameter yang digunakan:
+Data gempa bumi Indonesia sepanjang
+tahun 2025 dikumpulkan dari EMSC
+melalui SeismicPortal FDSN Event Web
+Service menggunakan script Python.
+Pengambilan data dibatasi berdasarkan
+koordinat wilayah Indonesia agar hanya
+kejadian yang relevan yang digunakan.
+Periode: Januari–Desember 2025
+Wilayah: Indonesia
+Latitude: sekitar -11 sampai 6
+Longitude: sekitar 95 sampai 141
+Data: time, latitude, longitude, depth, magnitude,
+region
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+
+
+SLIDE 12
+04
+Sumber Data
+Parameter yang Digunakan:
+Data EMSC digunakan untuk membentuk unit grid spasial di wilayah Indonesia. Setiap grid kemudian
+dihitung karakteristik aktivitas gempanya, seperti jumlah kejadian, rata-rata magnitudo, magnitudo
+maksimum, rata-rata kedalaman, dan kepadatan kejadian. Karakteristik tersebut digunakan sebagai fitur
+pada proses clustering K-Means dan DBSCAN.
+Format: CSV
+Cakupan: Gempa bumi wilayah Indonesia tahun 2025
+Kolom Utama: time, latitude, longitude, depth, magnitude,
+region, eventid
+Deskripsi
+Endpoint
+https://www.seismicportal.eu/fdsnws/event/1/query
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+
+
+SLIDE 13
+Data Preprocessing
+05
+Tahapan:
+Data hasil pengumpulan belum langsung
+digunakan untuk clustering. Tahap
+preprocessing dilakukan untuk
+memastikan data yang digunakan bersih
+dan memiliki format yang sesuai.
+Menghapus Missing value
+Menghapus Duplikat
+Filtering Indonesia
+Pembentukan Grid
+Agregasi per Grid
+Pemilihan Fitur
+Standardrisasi
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Standardisasi dilakukan terhadap fitur hasil
+agregasi tiap grid karena masing-masing fitur
+memiliki skala yang berbeda. Standardisasi
+mencegah fitur dengan rentang nilai besar
+mendominasi proses clustering.
+
+
+SLIDE 14
+07
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Atribut Data Awal
+time
+latitude
+longitude
+depth
+magnitude
+region
+eventid
+Fitur Clustering per Grid/Wilayah
+earthquake_count → jumlah kejadian gempa
+avg_magnitude → rata-rata magnitudo
+max_magnitude → magnitudo maksimum
+avg_depth → rata-rata kedalaman
+shallow_count → jumlah gempa dangkal
+earthquake_density → kepadatan kejadian gempa
+Fitur yang digunakan
+
+
+SLIDE 15
+Exploratory Data Analysis (EDA)
+05
+Analisis yang dilakukan:
+Tahap EDA dilakukan untuk memahami karakteristik data gempa sebelum proses clustering.
+Jumlah kejadian gempa selama tahun 2025.
+Distribusi magnitude gempa.
+Distribusi kedalaman gempa.
+Tren jumlah gempa per bulan.
+Hubungan magnitude dengan kedalaman.
+Persebaran lokasi episenter gempa di Indonesia.
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Visualisasi yang bisa ditampilkan nanti:
+Histogram magnitude.
+Histogram depth.
+Line chart jumlah gempa per bulan.
+Scatter plot magnitude vs depth.
+Peta persebaran episenter.
+
+
+SLIDE 16
+Modeling
+05
+K-Means Clustering
+Penelitian menggunakan dua algoritma unsupervised machine learning untuk
+membandingkan pola cluster yang dihasilkan.
+Jumlah cluster harus ditentukan
+terlebih dahulu.
+Elbow Method digunakan untuk
+membantu menentukan nilai k.
+Digunakan sebagai model clustering
+awal/baseline.
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+DBSCAN Clustering
+Tidak membutuhkan jumlah cluster di awal.
+Menggunakan parameter eps dan
+min_samples.
+Dapat mendeteksi noise atau titik yang
+tidak termasuk cluster tertentu.
+Cocok untuk pola geografis yang
+bentuknya tidak beraturan.
+Mengelompokkan data berdasarkan
+jarak terhadap pusat cluster atau
+centroid.
+Mengelompokkan data berdasarkan
+kepadatan titik.
+Grid → StandardScaler → Elbow Method → K-Means
+Grid → StandardScaler → k-distance → DBSCAN
+
+
+SLIDE 17
+Model Evaluation
+05
+Silhouette Score
+Evaluasi dilakukan untuk
+membandingkan kualitas cluster yang
+dihasilkan oleh K-Means dan DBSCAN.
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Davies-Bouldin Index
+Mengukur seberapa baik setiap data
+berada pada clusternya dibandingkan
+dengan cluster lain. Nilai yang lebih
+tinggi menunjukkan pemisahan cluster
+yang lebih baik.
+Mengukur tingkat kemiripan antar
+cluster. Nilai yang lebih rendah atau
+mendekati 0 menunjukkan hasil
+clustering yang lebih baik.
+rata-rata jumlah kejadian gempa
+rata-rata magnitudo
+magnitudo maksimum
+rata-rata kedalaman
+kepadatan kejadian
+Cluster Profiling
+Setelah cluster terbentuk, setiap
+cluster dianalisis berdasarkan:
+Berdasarkan karakteristik tersebut,
+setiap cluster selanjutnya diberikan
+interpretasi tingkat aktivitas seismik
+secara relatif.
+
+
+SLIDE 18
+Data Visualization & Interpretation
+05
+Hasil clustering dari K-Means dan DBSCAN selanjutnya dianalisis untuk menemukan pola
+karakteristik aktivitas gempa pada setiap cluster. Pola yang terbentuk kemudian
+diinterpretasikan berdasarkan karakteristik data dan divisualisasikan secara spasial untuk
+melihat persebarannya di wilayah Indonesia.
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Pola yang Dianalisis
+Jumlah kejadian gempa
+Rata-rata magnitudo
+Magnitudo maksimum
+Rata-rata kedalaman
+Kepadatan kejadian
+Persebaran spasial
+Contoh interpretasi
+Aktivitas relatif tinggi
+Aktivitas relatif sedang
+Aktivitas relatif rendah
+Aktivitas sering dengan magnitudo
+relatif kecil
+Aktivitas jarang dengan kejadian
+magnitudo besar
+Dominasi gempa dangkal atau dalam
+Noise / pola tidak umum
+
+
+SLIDE 19
+15
+Rencana Visualisasi
+Visualisasi Peta (Utama)
+Visualisasi Statistik
+Peta sebaran episenter
+gempa Indonesia
+Heatmap kepadatan
+aktivitas gempa
+Peta grid aktivitas gempa
+Peta clustering K-Means
+Peta clustering DBSCAN
+Peta zona aktivitas seismik
+berdasarkan model terpilih
+Tren jumlah gempa per bulan
+Histogram magnitudo
+Histogram kedalaman
+Scatter plot magnitudo vs kedalaman
+Elbow Method K-Means
+k-distance plot DBSCAN
+Perbandingan Silhouette Score
+Perbandingan Davies-Bouldin Index
+Profil karakteristik setiap cluster
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Hasil analisis dan clustering akan divisualisasikan menggunakan pendekatan GIS untuk
+melihat persebaran spasial pola aktivitas gempa di Indonesia.
+
+
+SLIDE 20
+Python
+Python Requests
+10
+Tools dan Library
+bahasa utama untuk menjalankan
+seluruh proses penelitian.
+mengambil data gempa Indonesia
+tahun 2025 dari EMSC/SeismicPortal
+API.
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+membaca, menggabungkan,
+membersihkan, dan mengolah data.
+Pandas
+membantu proses numerik dan
+transformasi data.
+Numpy
+Pengambilan & Pengolahan Data
+
+
+SLIDE 21
+Py
+PyProj
+Scikit-learn
+PyProj
+10
+Tools dan Library
+ menjalankan K-Means, DBSCAN,
+StandardScaler, Silhouette Score, dan
+Davies-Bouldin Index.
+mengatur sistem koordinat/proyeksi
+untuk analisis spasial.
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+mengolah data latitude-longitude
+sebagai data geospasial.
+GeoPandas
+membantu operasi geometri dan
+pengecekan posisi titik terhadap
+wilayah.
+Shapely
+Machine Learning & GIS
+
+
+SLIDE 22
+10
+Tools dan Library
+Machine Learning - Analisis Clustering Zona Aktivitas Gempa Bumi di Indonesia
+Visualiasi
+membuat grafik interaktif dan
+scatter plot.
+Plotly
+membuat peta interaktif, heatmap,
+dan peta hasil clustering.
+Folium
+membuat Elbow Method, k-distance
+plot, histogram, dan grafik evaluasi.
+Matplotlib
+membuat visualisasi statistik seperti
+distribusi magnitude, depth, dan
+korelasi fitur.
+Seaborn

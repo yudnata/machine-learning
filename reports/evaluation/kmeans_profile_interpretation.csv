@@ -1,0 +1,7 @@
+Kode algoritma,Nama untuk menjelaskan hasil,Gempa per kotak per triwulan (rata-rata),Magnitudo (rata-rata),Kedalaman km (rata-rata),Jumlah kotak-periode pembentuk kelompok
+KMEANS_P0,"Kelompok A: Cenderung dangkal, magnitudo sekitar 4,2",1.69,4.21,23.28,2895
+KMEANS_P1,"Kelompok B: Kedalaman sekitar 468 km, magnitudo 4,2",1.22,4.24,467.64,536
+KMEANS_P2,"Kelompok C: Kedalaman sekitar 138 km, magnitudo 3,4",1.65,3.41,137.88,1348
+KMEANS_P3,"Kelompok D: Kedalaman sekitar 145 km, magnitudo 4,2",2.41,4.23,145.44,1407
+KMEANS_P4,"Kelompok E: Cenderung dangkal, magnitudo sekitar 3,4",1.68,3.35,19.59,5528
+KMEANS_P5,Kelompok F: Kejadian lebih sering; cenderung dangkal,8.93,3.67,38.3,1757

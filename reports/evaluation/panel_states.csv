@@ -1,0 +1,7 @@
+split,state,n
+test,ELIGIBLE,2625
+test,NO_EVENTS,2892
+test_partial,ELIGIBLE,298
+test_partial,NO_EVENTS,1541
+train,ELIGIBLE,13471
+train,NO_EVENTS,21689

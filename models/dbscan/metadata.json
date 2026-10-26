@@ -1,0 +1,8 @@
+{
+  "prepared_sha256": "dfbf2b2e2e07360778f456c22553fa93aea790b069b43258bc6db0916d84ca7c",
+  "eps": 0.5050410897049709,
+  "min_samples": 20,
+  "diagnostic_only": false,
+  "fit_split": "train",
+  "selection": "rata-rata silhouette tertinggi di kandidat lolos batas noise, dominasi, fragmentasi dan dukungan; jika tidak ada, hanya diagnostik"
+}

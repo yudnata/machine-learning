@@ -1,0 +1,86 @@
+{
+  "status": "PASS",
+  "train_only_scaler": "PASS",
+  "20_historical_quarters": "PASS",
+  "zero_statistics_missing": "PASS",
+  "test_complete_and_partial_separate": "PASS",
+  "notebooks": [
+    {
+      "file": "notebooks\\00_panduan.ipynb",
+      "cells": 10,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\01_data_collection\\01_data_collection.ipynb",
+      "cells": 12,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\02_data_preprocessing\\02_data_preprocessing.ipynb",
+      "cells": 16,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\03_eda\\03_eda.ipynb",
+      "cells": 10,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\04_kmeans\\04_kmeans.ipynb",
+      "cells": 18,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\05_dbscan\\05_dbscan.ipynb",
+      "cells": 16,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\06_model_evaluation\\06_model_evaluation.ipynb",
+      "cells": 10,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\07_temporal_analysis\\07_temporal_analysis.ipynb",
+      "cells": 12,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\08_stability\\08_stability.ipynb",
+      "cells": 12,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\09_testing_2026\\09_testing_2026.ipynb",
+      "cells": 14,
+      "status": "PASS"
+    },
+    {
+      "file": "notebooks\\10_gis_mapping\\10_gis_mapping.ipynb",
+      "cells": 14,
+      "status": "PASS"
+    }
+  ],
+  "maps_static_checks": [
+    {
+      "method": "kmeans",
+      "geometry_count": 1839,
+      "html_bytes": 47730705
+    },
+    {
+      "method": "dbscan",
+      "geometry_count": 1839,
+      "html_bytes": 47703572
+    }
+  ],
+  "source_sha256": {
+    "src\\__init__.py": "491d7104f8dd76a5ba3299195debb2439d97132ddd51963408b5e25577972b0c",
+    "src\\analysis.py": "a02712c7671368a38f4e8936301a912957b13ccae049cdcc7d140ad97bb40e6f",
+    "src\\collection.py": "9b09319fb1f827c75785dc05be1d7cd9aa96eb6145c2c0ee75cd27cafa4e9087",
+    "src\\common.py": "7c4a0e9fb7eeb4572496e262139f194250c1dcf6300aa884d4e91b9de560d731",
+    "src\\mapping.py": "b9fd93994ab0afac570c188dd5474514378ebfa0003a6622b0b53600ecd483e8",
+    "src\\modeling.py": "6eec7aa7de524479172b63f794155ca29082965d5da8b87b53003f9180c89729",
+    "src\\preprocessing.py": "e1b9b1d5c928564bcec789eaad394d0351d38982efe8806495d5fa78fa6de55c"
+  },
+  "note": "Pemeriksaan peta di sini bersifat struktural; hasil pemeriksaan browser dicatat terpisah jika tersedia."
+}

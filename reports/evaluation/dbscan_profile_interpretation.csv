@@ -1,0 +1,9 @@
+Kode algoritma,Nama untuk menjelaskan hasil,Gempa per kotak per triwulan (rata-rata),Magnitudo (rata-rata),Kedalaman km (rata-rata),Jumlah kotak-periode pembentuk kelompok
+DBSCAN_P0,"Kelompok A: Cenderung dangkal, magnitudo sekitar 3,7",1.0,3.66,18.53,4860
+DBSCAN_P1,"Kelompok B: Kedalaman sekitar 144 km, magnitudo 3,9",2.91,3.93,144.34,459
+DBSCAN_P2,"Kelompok C: Kedalaman sekitar 209 km, magnitudo 3,9",1.0,3.88,208.79,1730
+DBSCAN_P3,Kelompok D: Kejadian lebih sering; cenderung dangkal,3.7,3.61,23.42,4538
+DBSCAN_P4,"Kelompok E: Kedalaman sekitar 75 km, magnitudo 3,7",2.0,3.69,74.99,467
+DBSCAN_P5,"Kelompok F: Kedalaman sekitar 95 km, magnitudo 3,6",3.32,3.63,95.03,171
+DBSCAN_P6,"Kelompok G: Kedalaman sekitar 285 km, magnitudo 4,2",2.0,4.17,285.08,28
+NOISE,Tidak masuk kelompok historis DBSCAN,8.09,3.97,165.1,1218

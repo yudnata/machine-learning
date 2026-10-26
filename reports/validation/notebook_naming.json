@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "membership_and_statistics_unchanged": true,
+  "naming_sections": {
+    "kmeans": [
+      "## 6. Penamaan dan interpretasi kelompok (setelah clustering)",
+      "## 7. Tabel nama kelompok dan angka dasarnya"
+    ],
+    "dbscan": [
+      "## 5. Penamaan dan interpretasi kelompok (setelah clustering)",
+      "## 6. Tabel nama kelompok dan angka dasarnya"
+    ]
+  },
+  "notebooks_rerun": [
+    4,
+    5,
+    6,
+    7,
+    9,
+    10
+  ]
+}

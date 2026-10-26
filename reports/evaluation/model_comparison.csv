@@ -1,0 +1,5 @@
+model,evaluation_scope,n_rows,n_clusters,n_assigned,noise_fraction,largest_cluster_fraction_assigned,smallest_cluster_size,silhouette,davies_bouldin,silhouette_n,dbscan_diagnostic_only
+kmeans,seluruh baris training layak; noise dikeluarkan dari metrik jarak,13471,6,13471,0.0,0.41036300200430553,536,0.3987200379685579,0.9327996390016254,2000,False
+dbscan,seluruh baris training layak; noise dikeluarkan dari metrik jarak,13471,7,12253,0.09041645015217875,0.39663755814902474,28,0.12606449405955314,2.011580986500305,2000,False
+kmeans,subset identik: baris training yang ditugaskan DBSCAN,12253,6,12253,0.0,0.4502570798988003,352,0.4256697351188162,0.866523127864384,2000,False
+dbscan,subset identik: baris training yang ditugaskan DBSCAN,12253,7,12253,0.0,0.39663755814902474,28,0.12606449405955314,2.011580986500305,2000,False

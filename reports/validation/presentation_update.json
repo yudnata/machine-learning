@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "model_data_and_assignments_unchanged": true,
+  "checked_files": 11,
+  "scope": "Perubahan hanya penjelasan, legenda, tooltip, popup, dan panduan. Pengujian kontrol peta memakai stub DOM/Leaflet; tidak ada uji browser nyata."
+}

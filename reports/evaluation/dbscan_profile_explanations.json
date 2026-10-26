@@ -1,0 +1,74 @@
+{
+  "DBSCAN_P0": {
+    "name": "Kelompok A: Cenderung dangkal, magnitudo sekitar 3,7",
+    "detail": "Rata-rata 1,0 kejadian / 3 bulan; magnitudo 3,7; kedalaman 19 km.",
+    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "color": "#0072B2"
+  },
+  "DBSCAN_P1": {
+    "name": "Kelompok B: Kedalaman sekitar 144 km, magnitudo 3,9",
+    "detail": "Rata-rata 2,9 kejadian / 3 bulan; magnitudo 3,9; kedalaman 144 km.",
+    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "color": "#D55E00"
+  },
+  "DBSCAN_P2": {
+    "name": "Kelompok C: Kedalaman sekitar 209 km, magnitudo 3,9",
+    "detail": "Rata-rata 1,0 kejadian / 3 bulan; magnitudo 3,9; kedalaman 209 km.",
+    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "color": "#009E73"
+  },
+  "DBSCAN_P3": {
+    "name": "Kelompok D: Kejadian lebih sering; cenderung dangkal",
+    "detail": "Rata-rata 3,7 kejadian / 3 bulan; magnitudo 3,6; kedalaman 23 km.",
+    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "color": "#CC79A7"
+  },
+  "DBSCAN_P4": {
+    "name": "Kelompok E: Kedalaman sekitar 75 km, magnitudo 3,7",
+    "detail": "Rata-rata 2,0 kejadian / 3 bulan; magnitudo 3,7; kedalaman 75 km.",
+    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "color": "#E69F00"
+  },
+  "DBSCAN_P5": {
+    "name": "Kelompok F: Kedalaman sekitar 95 km, magnitudo 3,6",
+    "detail": "Rata-rata 3,3 kejadian / 3 bulan; magnitudo 3,6; kedalaman 95 km.",
+    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "color": "#56B4E9"
+  },
+  "DBSCAN_P6": {
+    "name": "Kelompok G: Kedalaman sekitar 285 km, magnitudo 4,2",
+    "detail": "Rata-rata 2,0 kejadian / 3 bulan; magnitudo 4,2; kedalaman 285 km.",
+    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "color": "#332288"
+  },
+  "NO_EVENTS": {
+    "name": "Tidak ada gempa tercatat dengan magnitudo minimal 3",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#ededed"
+  },
+  "INCOMPLETE_FEATURES": {
+    "name": "Data belum cukup untuk menentukan kelompok",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#999999"
+  },
+  "NOISE": {
+    "name": "Tidak masuk kelompok historis DBSCAN",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#333333"
+  },
+  "NO_CORE_MATCH": {
+    "name": "Belum cocok dengan kelompok historis",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#333333"
+  },
+  "AMBIGUOUS_CORE_MATCH": {
+    "name": "Cocok dengan lebih dari satu kelompok",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#b58900"
+  }
+}
