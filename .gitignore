@@ -35,10 +35,6 @@ dist/
 *.pkl
 *.pickle
 
-# Peta keluaran notebook 10; aset dasar dan lisensi tetap disimpan
-/maps/*.html
-/maps/*.geojson
-
 # File sementara dan file sistem operasi
 *.log
 *.tmp
