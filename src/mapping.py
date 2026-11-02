@@ -71,29 +71,43 @@ def readable_period(period):
     return f"{months[quarter]} {year}" + (" (belum lengkap)" if period == "2026Q4" else "")
 
 
-def profile_descriptions(root, method, cfg):
-    profiles = pd.read_csv(Path(root) / f"models/{method}/profiles.csv")
+def profile_descriptions(root, method, cfg, profiles_path=None):
+    profiles = pd.read_csv(profiles_path if profiles_path is not None else Path(root) / f"models/{method}/profiles.csv")
     clusters = profiles.loc[profiles["profile"].str.contains("_P", regex=False)].copy()
-    maximum_count = clusters["earthquake_count"].max()
+    def relative_levels(values):
+        if len(values) <= 1 or values.nunique() <= 1:
+            return pd.Series("tidak dibedakan", index=values.index)
+        position = (values.rank(method="average") - 1) / (len(values) - 1)
+        return position.map(lambda value: "rendah" if value <= 1 / 3 else "tinggi" if value >= 2 / 3 else "sedang")
+
+    clusters["frequency_level"] = relative_levels(clusters["earthquake_count"])
+    clusters["magnitude_level"] = relative_levels(clusters["avg_magnitude"])
     descriptions = {}
     for row in clusters.itertuples():
         number = int(row.profile.rsplit("_P", 1)[1])
         group = f"Kelompok {chr(65 + number)}"
-        magnitude = f"{row.avg_magnitude:.1f}".replace(".", ",")
-        count = f"{row.earthquake_count:.1f}".replace(".", ",")
+        magnitude = f"{row.avg_magnitude:.2f}".replace(".", ",")
+        count = f"{row.earthquake_count:.2f}".replace(".", ",")
         depth = f"{row.avg_depth:.0f}"
         if row.avg_depth < cfg["shallow_depth_km"]:
-            characteristic = f"Cenderung dangkal, magnitudo sekitar {magnitude}"
+            depth_label = "kedalaman rata-rata dangkal"
+        elif row.avg_depth < 300:
+            depth_label = "kedalaman rata-rata menengah"
         else:
-            characteristic = f"Kedalaman sekitar {depth} km, magnitudo {magnitude}"
-        if row.earthquake_count == maximum_count:
-            characteristic = "Kejadian lebih sering; " + ("cenderung dangkal" if row.avg_depth < cfg["shallow_depth_km"] else f"kedalaman sekitar {depth} km")
+            depth_label = "kedalaman rata-rata dalam"
+        characteristic = f"Profil {depth_label}, frekuensi relatif {row.frequency_level}, magnitudo relatif {row.magnitude_level}"
         descriptions[row.profile] = {
             "name": group + ": " + characteristic,
             "detail": f"Rata-rata {count} kejadian / 3 bulan; magnitudo {magnitude}; kedalaman {depth} km.",
-            "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+            "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
             "color": profile_color(row.profile),
         }
+    characteristics = [item["name"].split(": ", 1)[1] for item in descriptions.values()]
+    for row in clusters.itertuples():
+        item = descriptions[row.profile]
+        if characteristics.count(item["name"].split(": ", 1)[1]) > 1:
+            count = f"{row.earthquake_count:.2f}".replace(".", ",")
+            item["name"] += f" ({count} kejadian/kotak-triwulan)"
     special_names = {
         "NO_EVENTS": f"Tidak ada gempa tercatat dengan magnitudo minimal {cfg['min_magnitude']:g}",
         "INCOMPLETE_FEATURES": "Data belum cukup untuk menentukan kelompok",
@@ -107,9 +121,9 @@ def profile_descriptions(root, method, cfg):
     return descriptions
 
 
-def profile_interpretation_table(root, method, cfg):
-    profiles = pd.read_csv(Path(root) / f"models/{method}/profiles.csv")
-    descriptions = profile_descriptions(root, method, cfg)
+def profile_interpretation_table(root, method, cfg, profiles_path=None):
+    profiles = pd.read_csv(profiles_path if profiles_path is not None else Path(root) / f"models/{method}/profiles.csv")
+    descriptions = profile_descriptions(root, method, cfg, profiles_path)
     profiles["nama_kelompok"] = profiles["profile"].map(lambda code: descriptions[code]["name"])
     table = profiles[["profile", "nama_kelompok", "earthquake_count", "avg_magnitude", "avg_depth", "n_grid_quarters"]].copy()
     return table.rename(columns={
@@ -192,11 +206,13 @@ def attach_selector(map_obj, layers, default_period, title, legend, grid_km=50):
 def create_maps(root=ROOT):
     root = Path(root)
     cfg, _, _, _, _, _ = load_prepared(root)
-    require(root / "reports/testing_2026/labels_all_2026.csv", "09 testing 2026")
+    require(root / "reports/testing_2026/labels_all_2026.csv", "10 testing 2026")
     test = pd.read_csv(root / "reports/testing_2026/labels_all_2026.csv")
     inverse = Transformer.from_crs(cfg["projection"], "EPSG:4326", always_xy=True)
     paths = []
-    for method in ["kmeans", "dbscan"]:
+    method_titles = {"kmeans": "K-Means", "kmedoids": "K-Medoids", "dbscan": "DBSCAN"}
+    distance_flags = {"kmeans": "outside_training_distance_q99", "kmedoids": "kmedoids_outside_training_distance_q99"}
+    for method in ["kmeans", "kmedoids", "dbscan"]:
         load_model(root, method)
         descriptions = profile_descriptions(root, method, cfg)
         explanation_path = root / "reports/evaluation" / f"{method}_profile_explanations.json"
@@ -216,10 +232,10 @@ def create_maps(root=ROOT):
             features = []
             for row in subset.itertuples():
                 explanation = descriptions[row.profile]
-                out_of_range = getattr(row, "outside_training_distance_q99", False)
+                out_of_range = getattr(row, distance_flags.get(method, "unused"), False)
                 assignment_note = "Penetapan kelompok berdasarkan ciri aktivitas."
-                if method == "kmeans" and pd.notna(out_of_range) and bool(out_of_range):
-                    assignment_note = "Ciri data jauh dari pola historis. K-Means tetap memberi kelompok terdekat; periksa datanya."
+                if method in distance_flags and pd.notna(out_of_range) and bool(out_of_range):
+                    assignment_note = f"Ciri data jauh dari pola historis. {method_titles[method]} tetap memberi kelompok terdekat; periksa datanya."
                 properties = {"grid_id":row.grid_id, "period":readable_period(row.period), "split":"Pembentukan kelompok (2021-2025)" if row.split == "train" else "Pengujian data baru (2026); periode belum lengkap" if row.split == "test_partial" else "Pengujian data baru (2026)",
                               "profile":row.profile, "group_name":explanation["name"], "historical_summary":explanation["detail"],
                               "event_count":int(row.earthquake_count), "avg_magnitude":round(row.avg_magnitude,2) if pd.notna(row.avg_magnitude) else "Tidak tersedia",
@@ -239,11 +255,11 @@ def create_maps(root=ROOT):
             layers[period] = group
         legend = [descriptions[p] for p in sorted(combined["profile"].unique(), key=lambda p:(0 if "_P" in p else 1, p))]
         attach_grid_toggle(map_obj, layers, default)
-        attach_selector(map_obj, layers, default, f"Kelompok aktivitas gempa · {'K-Means' if method == 'kmeans' else 'DBSCAN'}", legend, cfg["grid_km"])
+        attach_selector(map_obj, layers, default, f"Kelompok aktivitas gempa · {method_titles[method]}", legend, cfg["grid_km"])
         path = root / f"maps/{method}_profiles_by_quarter.html"
         map_obj.save(str(path))
         paths.append(path)
-        require(root / f"reports/temporal/{method}/grid_stability.csv", "07 transisi")
+        require(root / f"reports/temporal/{method}/grid_stability.csv", "08 transisi")
         summary = pd.read_csv(root / f"reports/temporal/{method}/grid_stability.csv")
         summary = summary.merge(grids, on="grid_id", validate="one_to_one")
         changes_map = create_base_map(root, cfg)

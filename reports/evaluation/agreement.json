@@ -1,5 +1,31 @@
 {
   "ari_common_assigned": 0.26652305388647424,
+  "pairwise_ari": {
+    "kmeans_vs_kmedoids": {
+      "ari_all_rows": 0.31087330230624305,
+      "ari_common_assigned": 0.31286413622400333
+    },
+    "kmeans_vs_dbscan": {
+      "ari_all_rows": 0.28248748427247206,
+      "ari_common_assigned": 0.26652305388647424
+    },
+    "kmeans_vs_kmedoids_matched_k": {
+      "ari_all_rows": 0.5548678280943184,
+      "ari_common_assigned": 0.5359611325358085
+    },
+    "kmedoids_vs_dbscan": {
+      "ari_all_rows": 0.3473652349267368,
+      "ari_common_assigned": 0.36634161613858757
+    },
+    "kmedoids_vs_kmedoids_matched_k": {
+      "ari_all_rows": 0.20329112740365557,
+      "ari_common_assigned": 0.1939371564991608
+    },
+    "dbscan_vs_kmedoids_matched_k": {
+      "ari_all_rows": 0.27014839102139554,
+      "ari_common_assigned": 0.2714068716216114
+    }
+  },
   "n_common_assigned": 12253,
   "fraction_common_assigned": 0.9095835498478212,
   "meaning": "kesepakatan partisi, bukan akurasi terhadap ground truth"

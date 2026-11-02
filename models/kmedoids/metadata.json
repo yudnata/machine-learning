@@ -1,0 +1,8 @@
+{
+  "prepared_sha256": "8ea9197e6e83edb367987c675dc35f6a82e545ffc97fa0f87021f80c9a10c31d",
+  "selected_k": 2,
+  "matched_k_with_kmeans": 6,
+  "algorithm": "PAM: BUILD deterministik + SWAP FastPAM, jarak Euclidean",
+  "selection": "rata-rata silhouette 3 sampel tertinggi; tie-break DBI terendah dan k terkecil",
+  "fit_split": "train"
+}

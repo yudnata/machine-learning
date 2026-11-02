@@ -108,7 +108,7 @@ fig.tight_layout()
 fig.savefig(ROOT / "reports/figures/eda_quarters_readable.png", dpi=160)
 plt.show()
 plt.close(fig)
-display(Markdown("**Cara membaca:** Q1 = Januari-Maret, Q2 = April-Juni, Q3 = Juli-September, Q4 = Oktober-Desember. Grafik ini menunjukkan jumlah kejadian seluruh wilayah penelitian, bukan perubahan kelompok pada satu kotak. Perubahan kelompok per kotak diperiksa di notebook 07."))
+display(Markdown("**Cara membaca:** Q1 = Januari-Maret, Q2 = April-Juni, Q3 = Juli-September, Q4 = Oktober-Desember. Grafik ini menunjukkan jumlah kejadian seluruh wilayah penelitian, bukan perubahan kelompok pada satu kotak. Perubahan kelompok per kotak diperiksa di notebook 08."))
 '''
 
 THRESHOLDS = '''threshold_view = thresholds.pivot(index="year", columns="min_magnitude", values="event_count")
@@ -125,7 +125,7 @@ Makin tinggi batasnya, makin sedikit data yang digunakan.
 **Keputusan penelitian:** batas utama tetap mengikuti konfigurasi.
 Tabel ini memperlihatkan pengaruh batas tersebut terhadap jumlah data;
 tabel ini belum membuktikan bahwa semua gempa di atas batas itu tercatat lengkap.
-Pengaruh perubahan batas terhadap hasil kelompok diuji di notebook 08.
+Pengaruh perubahan batas terhadap hasil kelompok diuji di notebook 09.
 """))
 '''
 
@@ -149,7 +149,7 @@ Kotak yang sama pada April-Juni menjadi baris lain.
 **Temuan yang perlu diperhatikan:** banyak baris hanya merangkum sedikit kejadian.
 Jika sebuah baris hanya memiliki satu gempa, rata-rata dan maksimum magnitudonya sama dengan magnitudo gempa itu.
 Karena itu perubahan profil dapat dipengaruhi sedikit kejadian, dan tidak langsung membuktikan perubahan kondisi tektonik.
-Kepekaan hasil terhadap jumlah kejadian diuji di notebook 08.
+Kepekaan hasil terhadap jumlah kejadian diuji di notebook 09.
 """))
 support = pd.cut(train["earthquake_count"], bins=[0, 1, 4, 9, float("inf")], labels=["1 gempa", "2-4 gempa", "5-9 gempa", "10 gempa atau lebih"])
 display(support.value_counts(sort=False).rename_axis("Gempa dalam satu kotak-triwulan").reset_index(name="Jumlah baris training"))
@@ -178,7 +178,7 @@ SUMMARY = '''display(Markdown(f"""### Apa yang kita ketahui setelah EDA?
    sehingga profil dan perubahannya perlu ditafsirkan hati-hati.
 5. Pilihan batas magnitudo memengaruhi data yang tersisa. Kelengkapan katalog dan perbedaan jenis magnitudo masih menjadi batas interpretasi.
 
-**Langkah berikutnya:** notebook 04 dan 05 mengelompokkan kotak-triwulan berdasarkan lima ciri aktivitas.
+**Langkah berikutnya:** notebook 04, 05, dan 06 mengelompokkan kotak-triwulan berdasarkan lima ciri aktivitas.
 EDA belum menghasilkan kelompok dan belum menghasilkan peta tingkat risiko.
 Hasil clustering serta uji sensitivitas dibaca bersama temuan EDA ini.
 

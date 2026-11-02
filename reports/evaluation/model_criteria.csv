@@ -1,0 +1,4 @@
+,Silhouette (naik),Davies-Bouldin (turun),Calinski-Harabasz (naik),Baris Silhouette negatif % (turun),Kestabilan subsampel ARI (naik),Cakupan data % (naik)
+K-Means (k=6),0.42567,0.866523,7441.893598,3.321636,0.989572,100.0
+K-Medoids (k=2),0.42981,1.110334,6007.189859,0.987513,0.993243,100.0
+DBSCAN (7 kelompok),0.126064,2.011581,1776.206946,23.700318,0.999773,90.958355

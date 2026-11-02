@@ -1,6 +1,6 @@
 # Penelitian aktivitas seismik: training 2021-2025, testing 2026
 
-**Mulai dari [00_panduan.ipynb](notebooks/00_panduan.ipynb).** Notebook lama `../ml_20206 (1).ipynb` tidak diubah. Seluruh pekerjaan baru berada dalam folder ini.
+**Mulai dari [00_panduan.ipynb](notebooks/00_panduan.ipynb).** Notebook lama `../ml_20206 (1).ipynb` tidak diubah. Seluruh pekerjaan baru berada dalam folder ini. Tiga algoritma dibandingkan: K-Means, DBSCAN, dan K-Medoids (notebook 06 dan 07).
 
 Hasil aktual dan batas interpretasinya dicatat pada [ringkasan hasil eksekusi](reports/ringkasan_hasil.md).
 
@@ -20,11 +20,12 @@ Tombol **Sembunyikan grid / Tampilkan grid** tersedia di kiri bawah semua peta H
 | 03 | [EDA](notebooks/03_eda/03_eda.ipynb) | Audit katalog, distribusi, korelasi |
 | 04 | [K-Means](notebooks/04_kmeans/04_kmeans.ipynb) | Seleksi k, centroid, label, profil |
 | 05 | [DBSCAN](notebooks/05_dbscan/05_dbscan.ipynb) | k-distance, pencarian eps/min_samples, noise |
-| 06 | [Model evaluation](notebooks/06_model_evaluation/06_model_evaluation.ipynb) | Perbandingan cakupan dan subset identik |
-| 07 | [Temporal analysis](notebooks/07_temporal_analysis/07_temporal_analysis.ipynb) | Riwayat, transisi, durasi, kestabilan per grid |
-| 08 | [Stability](notebooks/08_stability/08_stability.ipynb) | ARI parameter, grid, magnitudo, kebijakan seleksi |
-| 09 | [Testing 2026](notebooks/09_testing_2026/09_testing_2026.ipynb) | Hasil Q1-Q3 dan Q4 parsial, drift, core matching |
-| 10 | [GIS mapping](notebooks/10_gis_mapping/10_gis_mapping.ipynb) | Peta polygon dengan pemilih quarter dan peta perubahan |
+| 06 | [K-Medoids](notebooks/06_kmedoids/06_kmedoids.ipynb) | PAM, seleksi k, medoid nyata, label, profil |
+| 07 | [Model evaluation](notebooks/07_model_evaluation/07_model_evaluation.ipynb) | Perbandingan tiga model: skor, gambar clustering, kestabilan, peringkat, kesimpulan akademik |
+| 08 | [Temporal analysis](notebooks/08_temporal_analysis/08_temporal_analysis.ipynb) | Riwayat, transisi, durasi, kestabilan per grid |
+| 09 | [Stability](notebooks/09_stability/09_stability.ipynb) | ARI parameter, grid, magnitudo, kebijakan seleksi |
+| 10 | [Testing 2026](notebooks/10_testing_2026/10_testing_2026.ipynb) | Hasil Q1-Q3 dan Q4 parsial, drift, core matching |
+| 11 | [GIS mapping](notebooks/11_gis_mapping/11_gis_mapping.ipynb) | Peta polygon dengan pemilih quarter dan peta perubahan |
 
 Setiap notebook memuat penjelasan, kode proses yang terlihat, section bernomor, daftar isi, tautan navigasi, dan pemeriksaan hasil. Gunakan Outline pada VS Code atau Table of Contents Jupyter untuk melompat/melipat section. Penomoran folder menjaga urutan di Explorer. Jalankan **Run All** sesuai nomor; tiap notebook memakai kernel baru dan membaca hasil tahap sebelumnya dari disk. Memindahkan urutan cell dapat memutus dependensi, sehingga pengurutan dimaksudkan sebagai navigasi tahapan, bukan eksekusi bebas urutan.
 
@@ -49,6 +50,7 @@ notebooks/              notebook utama per tahap/metode
 data/raw/monthly/       respons JSON asli, bisa dipakai offline
 data/processed/         events bersih, panel, scaled features, scaler
 models/kmeans/          model, search, profil, label training
+models/kmedoids/        model, search, profil, label training, medoid
 models/dbscan/          model, search, profil, label training
 reports/evaluation/     audit katalog dan perbandingan model
 reports/temporal/       history, transisi, durasi per metode
@@ -67,9 +69,9 @@ docs/                   keputusan metodologi dan catatan sumber
 
 Pengaturan ada di `config.json`. Training 2021-2025, testing sebelum 2026-10-26 00:00 UTC. **2026Q4 belum lengkap** dan dipisah dari Q1-Q3. Grid utama 50 km pada proyeksi LAEA; sensitivitas 25/100 km. Ambang M>=3.0 masih eksploratif. Jangan menyamakan batas unduhan lengkap dengan katalog yang pasti lengkap secara seismologis.
 
-Jika konfigurasi berubah, jalankan ulang notebook 01 bila cakupan unduhan berubah, lalu 02 sampai 10. Hash konfigurasi/data mendeteksi pemakaian preprocessing/model lama. Peta dan tabel ringkasan harus dihasilkan ulang setelah tahap model berubah. Jangan mencampurkan file hasil dari dua konfigurasi.
+Jika konfigurasi berubah, jalankan ulang notebook 01 bila cakupan unduhan berubah, lalu 02 sampai 11. Hash konfigurasi/data mendeteksi pemakaian preprocessing/model lama. Peta dan tabel ringkasan harus dihasilkan ulang setelah tahap model berubah. Jangan mencampurkan file hasil dari dua konfigurasi.
 
-**Baca [metodologi dan batas interpretasi](docs/metodologi.md)** sebelum menggunakan hasil dalam laporan. Profil aktivitas bukan peta risiko. Tidak ada label ground truth atau accuracy. DBSCAN pada 2026 menggunakan aturan core-radius tambahan yang menangani kondisi ambigu. Pergantian profil perlu ditinjau bersama dukungan data dan hasil sensitivitas.
+**Baca [metodologi dan batas interpretasi](docs/metodologi.md)** sebelum menggunakan hasil dalam laporan. Profil aktivitas bukan peta risiko. Tidak ada label ground truth atau accuracy. K-Medoids memakai implementasi PAM sendiri (`src/kmedoids.py`) tanpa dependensi tambahan. DBSCAN pada 2026 menggunakan aturan core-radius tambahan yang menangani kondisi ambigu. Pergantian profil perlu ditinjau bersama dukungan data dan hasil sensitivitas.
 
 ## Reproduksi dan verifikasi
 

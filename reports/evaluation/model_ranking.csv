@@ -1,0 +1,4 @@
+,Silhouette (naik),Davies-Bouldin (turun),Calinski-Harabasz (naik),Baris Silhouette negatif % (turun),Kestabilan subsampel ARI (naik),Cakupan data % (naik),Rata-rata peringkat (kualitas klaster),Rata-rata peringkat (semua kriteria)
+K-Means (k=6),1,1,1,2,2,1,1.4,1.3333
+K-Medoids (k=2),1,2,2,1,1,1,1.4,1.3333
+DBSCAN (7 kelompok),3,3,3,3,1,3,2.6,2.6667

@@ -1,44 +1,44 @@
 {
   "DBSCAN_P0": {
-    "name": "Kelompok A: Cenderung dangkal, magnitudo sekitar 3,7",
-    "detail": "Rata-rata 1,0 kejadian / 3 bulan; magnitudo 3,7; kedalaman 19 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok A: Profil kedalaman rata-rata dangkal, frekuensi relatif rendah, magnitudo relatif rendah",
+    "detail": "Rata-rata 1,00 kejadian / 3 bulan; magnitudo 3,66; kedalaman 19 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#0072B2"
   },
   "DBSCAN_P1": {
-    "name": "Kelompok B: Kedalaman sekitar 144 km, magnitudo 3,9",
-    "detail": "Rata-rata 2,9 kejadian / 3 bulan; magnitudo 3,9; kedalaman 144 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok B: Profil kedalaman rata-rata menengah, frekuensi relatif tinggi, magnitudo relatif tinggi",
+    "detail": "Rata-rata 2,91 kejadian / 3 bulan; magnitudo 3,93; kedalaman 144 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#D55E00"
   },
   "DBSCAN_P2": {
-    "name": "Kelompok C: Kedalaman sekitar 209 km, magnitudo 3,9",
-    "detail": "Rata-rata 1,0 kejadian / 3 bulan; magnitudo 3,9; kedalaman 209 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok C: Profil kedalaman rata-rata menengah, frekuensi relatif rendah, magnitudo relatif tinggi",
+    "detail": "Rata-rata 1,00 kejadian / 3 bulan; magnitudo 3,88; kedalaman 209 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#009E73"
   },
   "DBSCAN_P3": {
-    "name": "Kelompok D: Kejadian lebih sering; cenderung dangkal",
-    "detail": "Rata-rata 3,7 kejadian / 3 bulan; magnitudo 3,6; kedalaman 23 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok D: Profil kedalaman rata-rata dangkal, frekuensi relatif tinggi, magnitudo relatif rendah",
+    "detail": "Rata-rata 3,70 kejadian / 3 bulan; magnitudo 3,61; kedalaman 23 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#CC79A7"
   },
   "DBSCAN_P4": {
-    "name": "Kelompok E: Kedalaman sekitar 75 km, magnitudo 3,7",
-    "detail": "Rata-rata 2,0 kejadian / 3 bulan; magnitudo 3,7; kedalaman 75 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok E: Profil kedalaman rata-rata menengah, frekuensi relatif sedang, magnitudo relatif sedang",
+    "detail": "Rata-rata 2,00 kejadian / 3 bulan; magnitudo 3,69; kedalaman 75 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#E69F00"
   },
   "DBSCAN_P5": {
-    "name": "Kelompok F: Kedalaman sekitar 95 km, magnitudo 3,6",
-    "detail": "Rata-rata 3,3 kejadian / 3 bulan; magnitudo 3,6; kedalaman 95 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok F: Profil kedalaman rata-rata menengah, frekuensi relatif tinggi, magnitudo relatif rendah",
+    "detail": "Rata-rata 3,32 kejadian / 3 bulan; magnitudo 3,63; kedalaman 95 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#56B4E9"
   },
   "DBSCAN_P6": {
-    "name": "Kelompok G: Kedalaman sekitar 285 km, magnitudo 4,2",
-    "detail": "Rata-rata 2,0 kejadian / 3 bulan; magnitudo 4,2; kedalaman 285 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok G: Profil kedalaman rata-rata menengah, frekuensi relatif sedang, magnitudo relatif tinggi",
+    "detail": "Rata-rata 2,00 kejadian / 3 bulan; magnitudo 4,17; kedalaman 285 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#332288"
   },
   "NO_EVENTS": {

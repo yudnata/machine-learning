@@ -73,15 +73,17 @@ Kita memeriksa distribusi magnitudo dan kedalaman, jumlah kejadian dari waktu ke
 
 Notebook: [03 EDA](notebooks/03_eda/03_eda.ipynb).
 
-### Langkah 4: Mencari kelompok dengan dua metode
+### Langkah 4: Mencari kelompok dengan tiga metode
 
 **K-Means** mencoba membentuk kelompok yang mempunyai ciri mirip dengan pusat kelompoknya. Kode mencoba beberapa jumlah kelompok, lalu memilih **6 kelompok** menurut aturan evaluasi yang digunakan.
 
 **DBSCAN** mencari kelompok berdasarkan kepadatan kemiripan data. Metode ini juga dapat membiarkan suatu catatan tidak masuk kelompok. Pada pengaturan yang terpilih, hasilnya **7 kelompok**, dengan sekitar **9,04%** catatan training tidak masuk kelompok DBSCAN.
 
-**Hasil tahap ini:** setiap catatan yang dapat dikelompokkan memperoleh kode kelompok. Dua metode dapat memberi hasil berbeda karena cara membentuk kelompoknya berbeda.
+**K-Medoids** mirip K-Means, tetapi pusat kelompoknya adalah satu catatan kotak-triwulan yang benar-benar ada di data, bukan titik rata-rata. Dengan aturan pemilihan yang sama seperti K-Means, hasilnya **2 kelompok**.
 
-Notebook: [04 K-Means](notebooks/04_kmeans/04_kmeans.ipynb) dan [05 DBSCAN](notebooks/05_dbscan/05_dbscan.ipynb).
+**Hasil tahap ini:** setiap catatan yang dapat dikelompokkan memperoleh kode kelompok. Tiga metode dapat memberi hasil berbeda karena cara membentuk kelompoknya berbeda.
+
+Notebook: [04 K-Means](notebooks/04_kmeans/04_kmeans.ipynb), [05 DBSCAN](notebooks/05_dbscan/05_dbscan.ipynb), dan [06 K-Medoids](notebooks/06_kmedoids/06_kmedoids.ipynb).
 
 ### Langkah 5: Menilai hasil kelompok
 
@@ -89,16 +91,17 @@ Kita memeriksa apakah anggota kelompok cukup mirip dan apakah kelompok satu cuku
 
 Pada 12.253 catatan training yang sama-sama dibandingkan, hasilnya:
 
-| Penilaian | K-Means | DBSCAN | Cara membaca |
-| --- | --- | --- | --- |
-| Silhouette | 0,426 | 0,126 | Lebih tinggi berarti pemisahan kelompok lebih baik menurut ukuran ini. |
-| Davies-Bouldin | 0,867 | 2,012 | Lebih rendah berarti kelompok lebih terpisah menurut ukuran ini. |
+| Penilaian | K-Means (k=6) | K-Medoids (k=2) | K-Medoids (k=6, kontrol) | DBSCAN | Cara membaca |
+| --- | --- | --- | --- | --- | --- |
+| Silhouette | 0,426 | 0,430 | 0,347 | 0,126 | Lebih tinggi berarti pemisahan kelompok lebih baik menurut ukuran ini. |
+| Davies-Bouldin | 0,867 | 1,110 | 1,008 | 2,012 | Lebih rendah berarti kelompok lebih terpisah menurut ukuran ini. |
+| Calinski-Harabasz | 7.442 | 6.007 | 7.261 | 1.776 | Lebih tinggi berarti kelompok lebih kompak dan terpisah menurut ukuran ini. |
 
-**Hasil tahap ini:** dalam percobaan sekarang, K-Means menghasilkan struktur kelompok yang lebih baik menurut kedua ukuran tersebut. Skor ini **bukan persentase akurasi** dan belum membuktikan kelompok benar secara geologi.
+**Hasil tahap ini:** K-Means dan K-Medoids seri pada Silhouette (selisihnya lebih kecil daripada variasi antarsampel), tetapi K-Medoids memakai hanya 2 kelompok yang kasar. Ketika jumlah kelompoknya disamakan, K-Means lebih baik pada ketiga ukuran. DBSCAN terendah pada semua ukuran. Skor ini **bukan persentase akurasi** dan belum membuktikan kelompok benar secara geologi.
 
 Jumlah enam kelompok juga masih pilihan eksperimen. Skor untuk dua kelompok berdekatan, sehingga enam belum menjadi satu-satunya jawaban yang pasti.
 
-Notebook: [06 Model evaluation](notebooks/06_model_evaluation/06_model_evaluation.ipynb).
+Notebook: [07 Model evaluation](notebooks/07_model_evaluation/07_model_evaluation.ipynb) memuat gambar clustering, peringkat, dan kesimpulan akademik.
 
 ### Langkah 6: Membaca ciri kelompok lalu memberi nama
 
@@ -114,7 +117,7 @@ Beberapa contoh aktual dari enam kelompok K-Means:
 
 **Kelompok dibentuk algoritma; nama penjelasannya dibuat setelah kita membaca hasil.** Peneliti tetap memilih data, fitur, dan aturan model, sehingga keputusan penelitian ikut memengaruhi hasil. Huruf A sampai F hanya pengenal, bukan peringkat bahaya.
 
-Aturan nama dapat dibaca pada [notebook 04 bagian 6-7](notebooks/04_kmeans/04_kmeans.ipynb#s6) dan [notebook 05 bagian 5-6](notebooks/05_dbscan/05_dbscan.ipynb#s5). Contoh E, F, dan B di atas hanya sebagian kelompok; tabel lengkap ada di notebook tersebut.
+Aturan nama dapat dibaca pada [notebook 04 bagian 6-7](notebooks/04_kmeans/04_kmeans.ipynb#s6), [notebook 05 bagian 5-6](notebooks/05_dbscan/05_dbscan.ipynb#s5), dan [notebook 06 bagian 7-8](notebooks/06_kmedoids/06_kmedoids.ipynb#s7). Contoh E, F, dan B di atas hanya sebagian kelompok; tabel lengkap ada di notebook tersebut.
 
 ### Langkah 7: Mengikuti perubahan kotak yang sama
 
@@ -122,7 +125,7 @@ Kita menyusun riwayat kelompok setiap kotak selama **20 triwulan pada 2021-2025*
 
 **Hasil tahap ini:** tabel perjalanan tiap wilayah, matriks perpindahan antarkelompok, dan ukuran kestabilan. Hanya dua triwulan berurutan yang sama-sama mempunyai kelompok dapat dibandingkan. Nol kejadian atau tidak masuk kelompok tidak otomatis dihitung sebagai pergantian profil.
 
-Notebook: [07 Temporal analysis](notebooks/07_temporal_analysis/07_temporal_analysis.ipynb).
+Notebook: [08 Temporal analysis](notebooks/08_temporal_analysis/08_temporal_analysis.ipynb).
 
 ### Langkah 8: Memeriksa apakah hasil mudah berubah
 
@@ -130,7 +133,7 @@ Kita mencoba pengaturan lain, termasuk kotak 25, 50, dan 100 km serta jumlah kej
 
 **Hasil tahap ini:** K-Means cukup konsisten ketika titik awal perhitungannya diubah, tetapi kelompok berubah cukup banyak ketika ukuran kotak atau syarat jumlah kejadian diubah. Artinya, hasil belum kuat untuk semua pengaturan.
 
-Notebook: [08 Stability](notebooks/08_stability/08_stability.ipynb).
+Notebook: [09 Stability](notebooks/09_stability/09_stability.ipynb).
 
 ### Langkah 9: Menguji pola historis pada 2026
 
@@ -142,7 +145,7 @@ Pada Januari-September 2026 terdapat **2.625 catatan kotak-triwulan yang layak**
 
 Q1-Q3 2026 merupakan periode lengkap. Q4 baru sampai sebelum 26 Oktober 2026 sehingga dipisahkan sebagai periode belum lengkap.
 
-Notebook: [09 Testing 2026](notebooks/09_testing_2026/09_testing_2026.ipynb).
+Notebook: [10 Testing 2026](notebooks/10_testing_2026/10_testing_2026.ipynb).
 
 ### Langkah 10: Menampilkan hasil di peta
 
@@ -150,7 +153,7 @@ Label kelompok dikembalikan ke kotak wilayah dan periodenya. Karena lokasi kotak
 
 **Hasil tahap ini:** peta kelompok aktivitas per periode dan peta berapa kali kelompok suatu wilayah berganti. Tombol **Sembunyikan grid / Tampilkan grid** membantu melihat daratan dengan atau tanpa kotak hasil analisis.
 
-Notebook: [10 GIS mapping](notebooks/10_gis_mapping/10_gis_mapping.ipynb). [Notebook 00](notebooks/00_panduan.ipynb) menjadi panduan menjalankan seluruh tahapan.
+Notebook: [11 GIS mapping](notebooks/11_gis_mapping/11_gis_mapping.ipynb). [Notebook 00](notebooks/00_panduan.ipynb) menjadi panduan menjalankan seluruh tahapan.
 
 ## 5. Contoh nyata: mengikuti satu wilayah
 
@@ -174,13 +177,15 @@ Cara membacanya:
 
 Dari contoh ini kita belum menyimpulkan wilayah menjadi lebih aman atau lebih berbahaya. Kita memeriksa ciri apa yang berubah, berapa banyak event yang mendukungnya, dan apakah hasilnya bertahan saat pengaturan diuji.
 
-## 6. Empat peta dan cara memakainya
+## 6. Enam peta dan cara memakainya
 
 | Peta | Gunanya |
 | --- | --- |
 | [Kelompok K-Means](maps/kmeans_profiles_by_quarter.html) | Melihat kelompok aktivitas tiap kotak pada periode terpilih. |
+| [Kelompok K-Medoids](maps/kmedoids_profiles_by_quarter.html) | Melihat kelompok berpusat medoid tiap kotak pada periode terpilih. |
 | [Kelompok DBSCAN](maps/dbscan_profiles_by_quarter.html) | Melihat hasil metode lain, termasuk catatan yang belum masuk atau belum cocok dengan kelompok. |
 | [Perubahan K-Means](maps/kmeans_profile_changes_2021_2025.html) | Melihat jumlah pergantian kelompok historis pada tiap kotak. |
+| [Perubahan K-Medoids](maps/kmedoids_profile_changes_2021_2025.html) | Melihat pergantian berdasarkan kelompok K-Medoids. |
 | [Perubahan DBSCAN](maps/dbscan_profile_changes_2021_2025.html) | Melihat pergantian berdasarkan kelompok DBSCAN. |
 
 Mulailah dari **peta K-Means**, pilih satu periode, lalu klik satu kotak. Popup menunjukkan data kotak itu. Bandingkan dengan periode lain pada lokasi yang sama. Peta perubahan dapat dibuka sesudah itu untuk melihat riwayat secara ringkas.
@@ -191,7 +196,7 @@ Kotak dengan angka **0** berarti tidak ada event di atas ambang pada periode itu
 
 ## 7. Hasil kita sekarang dan hasil akhir yang masih perlu diperkuat
 
-**Yang sudah dihasilkan:** data bersih, kelompok aktivitas, penjelasan ciri kelompok, riwayat perubahan, hasil pengujian 2026, serta peta untuk membacanya. Semua 11 notebook sudah pernah dijalankan dengan berhasil.
+**Yang sudah dihasilkan:** data bersih, kelompok aktivitas, penjelasan ciri kelompok, riwayat perubahan, hasil pengujian 2026, serta peta untuk membacanya. Semua 12 notebook sudah pernah dijalankan dengan berhasil.
 
 **Yang belum dapat dinyatakan kuat:** bahwa kelompok tersebut selalu stabil, setiap pergantian menunjukkan perubahan seismik yang nyata, atau enam kelompok merupakan satu-satunya pembagian yang benar.
 

@@ -4,7 +4,17 @@ RUN = '''from src.common import load_model
 
 LATIH_ULANG = False
 saved_files = [ROOT / f"models/dbscan/{name}" for name in ["model.joblib", "metadata.json", "parameter_search.csv", "training_labels.csv"]]
-if LATIH_ULANG or not all(path.is_file() for path in saved_files):
+
+def saved_model_is_current():
+    if not all(path.is_file() for path in saved_files):
+        return False
+    try:
+        load_model(ROOT, "dbscan")
+    except ValueError:
+        return False
+    return True
+
+if LATIH_ULANG or not saved_model_is_current():
     search, labels = fit_dbscan(ROOT)
     print("Pencarian parameter dan pelatihan DBSCAN selesai.")
 else:
@@ -162,10 +172,10 @@ display(HTML('<details><summary>Buka tabel seluruh percobaan dan alasannya</summ
 display(Markdown(f"""**Catatan metode:** aturan penyaringan adalah 2 sampai {cfg['dbscan_max_clusters']} kelompok,
 kelompok terkecil minimal {cfg['dbscan_min_cluster_size']} baris, noise maksimal {angka(cfg['dbscan_max_noise_fraction'] * 100, 0)}%,
 dominasi kelompok terbesar maksimal {angka(cfg['dbscan_max_largest_cluster_fraction'] * 100, 0)}% dari anggota yang ditugaskan.
-Ini pilihan rancangan penelitian; pengaruhnya diperiksa di notebook 08.
+Ini pilihan rancangan penelitian; pengaruhnya diperiksa di notebook 09.
 
 Silhouette seleksi **{angka(selected_result['silhouette'])}** adalah rata-rata tiga sampel seed {cfg['silhouette_seeds']}.
-Silhouette evaluasi dengan satu sampel seed 42 adalah **{angka(final_metrics['silhouette'])}**, sama dengan notebook 06.
+Silhouette evaluasi dengan satu sampel seed 42 adalah **{angka(final_metrics['silhouette'])}**, sama dengan notebook 07.
 Setiap sampel maksimal {jumlah(cfg['silhouette_sample_size'])} baris; DBI memakai seluruh anggota kelompok.
 Noise dikeluarkan dari kedua skor. Perbedaan skor sampel tidak mengubah model.
 """))
@@ -184,6 +194,6 @@ Kita tidak menetapkan tujuh kelompok sejak awal.
 
 Hasil pada data ini: **{jumlah(final_metrics['n_clusters'])} kelompok dan {angka(final_metrics['noise_fraction'] * 100, 2)}% noise**.
 Ciri setiap kelompok dibaca pada tabel bagian 6.
-Perbandingan dengan K-Means dilanjutkan di [notebook 06](../06_model_evaluation/06_model_evaluation.ipynb).
+Perbandingan dengan K-Means dan K-Medoids dilanjutkan di [notebook 07](../07_model_evaluation/07_model_evaluation.ipynb).
 """))
 '''

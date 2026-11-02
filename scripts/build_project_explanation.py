@@ -19,10 +19,14 @@ def build():
     example = example.loc[example["grid_id"].eq("5_-13") & example["period"].ge("2025Q1")].copy()
     test = pd.read_csv(ROOT / "reports/testing_2026/labels_all_2026.csv")
     first_test = test.loc[test["grid_id"].eq("5_-13") & test["period"].eq("2026Q1")].iloc[0]
-    comparison = pd.read_csv(ROOT / "reports/evaluation/model_comparison.csv").iloc[2:]
+    comparison = pd.read_csv(ROOT / "reports/evaluation/model_comparison.csv")
+    comparison = comparison.loc[comparison["evaluation_scope"].str.startswith("subset identik")]
     score_km = comparison.loc[comparison["model"].eq("kmeans")].iloc[0]
+    score_kd = comparison.loc[comparison["model"].eq("kmedoids")].iloc[0]
+    score_kd_matched = comparison.loc[comparison["model"].eq("kmedoids_matched_k")].iloc[0]
     score_db = comparison.loc[comparison["model"].eq("dbscan")].iloc[0]
     selected_k = json.loads((ROOT / "models/kmeans/metadata.json").read_text())["selected_k"]
+    kd_k = json.loads((ROOT / "models/kmedoids/metadata.json").read_text())["selected_k"]
     db_labels = pd.read_csv(ROOT / "models/dbscan/training_labels.csv")
     db_eligible = db_labels.loc[db_labels["cluster"].notna()]
     noise_fraction = db_eligible["cluster"].eq(-1).mean()
@@ -118,15 +122,17 @@ Kita memeriksa distribusi magnitudo dan kedalaman, jumlah kejadian dari waktu ke
 
 Notebook: {notebook(3, '03 EDA')}.
 
-### Langkah 4: Mencari kelompok dengan dua metode
+### Langkah 4: Mencari kelompok dengan tiga metode
 
 **K-Means** mencoba membentuk kelompok yang mempunyai ciri mirip dengan pusat kelompoknya. Kode mencoba beberapa jumlah kelompok, lalu memilih **{selected_k} kelompok** menurut aturan evaluasi yang digunakan.
 
 **DBSCAN** mencari kelompok berdasarkan kepadatan kemiripan data. Metode ini juga dapat membiarkan suatu catatan tidak masuk kelompok. Pada pengaturan yang terpilih, hasilnya **7 kelompok**, dengan sekitar **{number(noise_fraction*100, 2)}%** catatan training tidak masuk kelompok DBSCAN.
 
-**Hasil tahap ini:** setiap catatan yang dapat dikelompokkan memperoleh kode kelompok. Dua metode dapat memberi hasil berbeda karena cara membentuk kelompoknya berbeda.
+**K-Medoids** mirip K-Means, tetapi pusat kelompoknya adalah satu catatan kotak-triwulan yang benar-benar ada di data, bukan titik rata-rata. Dengan aturan pemilihan yang sama seperti K-Means, hasilnya **{kd_k} kelompok**.
 
-Notebook: {notebook(4, '04 K-Means')} dan {notebook(5, '05 DBSCAN')}.
+**Hasil tahap ini:** setiap catatan yang dapat dikelompokkan memperoleh kode kelompok. Tiga metode dapat memberi hasil berbeda karena cara membentuk kelompoknya berbeda.
+
+Notebook: {notebook(4, '04 K-Means')}, {notebook(5, '05 DBSCAN')}, dan {notebook(6, '06 K-Medoids')}.
 
 ### Langkah 5: Menilai hasil kelompok
 
@@ -134,16 +140,17 @@ Kita memeriksa apakah anggota kelompok cukup mirip dan apakah kelompok satu cuku
 
 Pada 12.253 catatan training yang sama-sama dibandingkan, hasilnya:
 
-| Penilaian | K-Means | DBSCAN | Cara membaca |
-| --- | --- | --- | --- |
-| Silhouette | {number(score_km['silhouette'], 3)} | {number(score_db['silhouette'], 3)} | Lebih tinggi berarti pemisahan kelompok lebih baik menurut ukuran ini. |
-| Davies-Bouldin | {number(score_km['davies_bouldin'], 3)} | {number(score_db['davies_bouldin'], 3)} | Lebih rendah berarti kelompok lebih terpisah menurut ukuran ini. |
+| Penilaian | K-Means (k={selected_k}) | K-Medoids (k={kd_k}) | K-Medoids (k={selected_k}, kontrol) | DBSCAN | Cara membaca |
+| --- | --- | --- | --- | --- | --- |
+| Silhouette | {number(score_km['silhouette'], 3)} | {number(score_kd['silhouette'], 3)} | {number(score_kd_matched['silhouette'], 3)} | {number(score_db['silhouette'], 3)} | Lebih tinggi berarti pemisahan kelompok lebih baik menurut ukuran ini. |
+| Davies-Bouldin | {number(score_km['davies_bouldin'], 3)} | {number(score_kd['davies_bouldin'], 3)} | {number(score_kd_matched['davies_bouldin'], 3)} | {number(score_db['davies_bouldin'], 3)} | Lebih rendah berarti kelompok lebih terpisah menurut ukuran ini. |
+| Calinski-Harabasz | {number(score_km['calinski_harabasz'], 0)} | {number(score_kd['calinski_harabasz'], 0)} | {number(score_kd_matched['calinski_harabasz'], 0)} | {number(score_db['calinski_harabasz'], 0)} | Lebih tinggi berarti kelompok lebih kompak dan terpisah menurut ukuran ini. |
 
-**Hasil tahap ini:** dalam percobaan sekarang, K-Means menghasilkan struktur kelompok yang lebih baik menurut kedua ukuran tersebut. Skor ini **bukan persentase akurasi** dan belum membuktikan kelompok benar secara geologi.
+**Hasil tahap ini:** K-Means dan K-Medoids seri pada Silhouette (selisihnya lebih kecil daripada variasi antarsampel), tetapi K-Medoids memakai hanya {kd_k} kelompok yang kasar. Ketika jumlah kelompoknya disamakan, K-Means lebih baik pada ketiga ukuran. DBSCAN terendah pada semua ukuran. Skor ini **bukan persentase akurasi** dan belum membuktikan kelompok benar secara geologi.
 
 Jumlah enam kelompok juga masih pilihan eksperimen. Skor untuk dua kelompok berdekatan, sehingga enam belum menjadi satu-satunya jawaban yang pasti.
 
-Notebook: {notebook(6, '06 Model evaluation')}.
+Notebook: {notebook(7, '07 Model evaluation')} memuat gambar clustering, peringkat, dan kesimpulan akademik.
 
 ### Langkah 6: Membaca ciri kelompok lalu memberi nama
 
@@ -159,7 +166,7 @@ Beberapa contoh aktual dari enam kelompok K-Means:
 
 **Kelompok dibentuk algoritma; nama penjelasannya dibuat setelah kita membaca hasil.** Peneliti tetap memilih data, fitur, dan aturan model, sehingga keputusan penelitian ikut memengaruhi hasil. Huruf A sampai F hanya pengenal, bukan peringkat bahaya.
 
-Aturan nama dapat dibaca pada {notebook(4, 'notebook 04 bagian 6-7', 6)} dan {notebook(5, 'notebook 05 bagian 5-6', 5)}. Contoh E, F, dan B di atas hanya sebagian kelompok; tabel lengkap ada di notebook tersebut.
+Aturan nama dapat dibaca pada {notebook(4, 'notebook 04 bagian 6-7', 6)}, {notebook(5, 'notebook 05 bagian 5-6', 5)}, dan {notebook(6, 'notebook 06 bagian 7-8', 7)}. Contoh E, F, dan B di atas hanya sebagian kelompok; tabel lengkap ada di notebook tersebut.
 
 ### Langkah 7: Mengikuti perubahan kotak yang sama
 
@@ -167,7 +174,7 @@ Kita menyusun riwayat kelompok setiap kotak selama **20 triwulan pada 2021-2025*
 
 **Hasil tahap ini:** tabel perjalanan tiap wilayah, matriks perpindahan antarkelompok, dan ukuran kestabilan. Hanya dua triwulan berurutan yang sama-sama mempunyai kelompok dapat dibandingkan. Nol kejadian atau tidak masuk kelompok tidak otomatis dihitung sebagai pergantian profil.
 
-Notebook: {notebook(7, '07 Temporal analysis')}.
+Notebook: {notebook(8, '08 Temporal analysis')}.
 
 ### Langkah 8: Memeriksa apakah hasil mudah berubah
 
@@ -175,7 +182,7 @@ Kita mencoba pengaturan lain, termasuk kotak 25, 50, dan 100 km serta jumlah kej
 
 **Hasil tahap ini:** K-Means cukup konsisten ketika titik awal perhitungannya diubah, tetapi kelompok berubah cukup banyak ketika ukuran kotak atau syarat jumlah kejadian diubah. Artinya, hasil belum kuat untuk semua pengaturan.
 
-Notebook: {notebook(8, '08 Stability')}.
+Notebook: {notebook(9, '09 Stability')}.
 
 ### Langkah 9: Menguji pola historis pada 2026
 
@@ -187,7 +194,7 @@ Pada Januari-September 2026 terdapat **{number(len(eligible_test))} catatan kota
 
 Q1-Q3 2026 merupakan periode lengkap. Q4 baru sampai sebelum 26 Oktober 2026 sehingga dipisahkan sebagai periode belum lengkap.
 
-Notebook: {notebook(9, '09 Testing 2026')}.
+Notebook: {notebook(10, '10 Testing 2026')}.
 
 ### Langkah 10: Menampilkan hasil di peta
 
@@ -195,7 +202,7 @@ Label kelompok dikembalikan ke kotak wilayah dan periodenya. Karena lokasi kotak
 
 **Hasil tahap ini:** peta kelompok aktivitas per periode dan peta berapa kali kelompok suatu wilayah berganti. Tombol **Sembunyikan grid / Tampilkan grid** membantu melihat daratan dengan atau tanpa kotak hasil analisis.
 
-Notebook: {notebook(10, '10 GIS mapping')}. {notebook(0, 'Notebook 00')} menjadi panduan menjalankan seluruh tahapan.
+Notebook: {notebook(11, '11 GIS mapping')}. {notebook(0, 'Notebook 00')} menjadi panduan menjalankan seluruh tahapan.
 
 ## 5. Contoh nyata: mengikuti satu wilayah
 
@@ -215,13 +222,15 @@ Cara membacanya:
 
 Dari contoh ini kita belum menyimpulkan wilayah menjadi lebih aman atau lebih berbahaya. Kita memeriksa ciri apa yang berubah, berapa banyak event yang mendukungnya, dan apakah hasilnya bertahan saat pengaturan diuji.
 
-## 6. Empat peta dan cara memakainya
+## 6. Enam peta dan cara memakainya
 
 | Peta | Gunanya |
 | --- | --- |
 | [Kelompok K-Means](maps/kmeans_profiles_by_quarter.html) | Melihat kelompok aktivitas tiap kotak pada periode terpilih. |
+| [Kelompok K-Medoids](maps/kmedoids_profiles_by_quarter.html) | Melihat kelompok berpusat medoid tiap kotak pada periode terpilih. |
 | [Kelompok DBSCAN](maps/dbscan_profiles_by_quarter.html) | Melihat hasil metode lain, termasuk catatan yang belum masuk atau belum cocok dengan kelompok. |
 | [Perubahan K-Means](maps/kmeans_profile_changes_2021_2025.html) | Melihat jumlah pergantian kelompok historis pada tiap kotak. |
+| [Perubahan K-Medoids](maps/kmedoids_profile_changes_2021_2025.html) | Melihat pergantian berdasarkan kelompok K-Medoids. |
 | [Perubahan DBSCAN](maps/dbscan_profile_changes_2021_2025.html) | Melihat pergantian berdasarkan kelompok DBSCAN. |
 
 Mulailah dari **peta K-Means**, pilih satu periode, lalu klik satu kotak. Popup menunjukkan data kotak itu. Bandingkan dengan periode lain pada lokasi yang sama. Peta perubahan dapat dibuka sesudah itu untuk melihat riwayat secara ringkas.
@@ -232,7 +241,7 @@ Kotak dengan angka **0** berarti tidak ada event di atas ambang pada periode itu
 
 ## 7. Hasil kita sekarang dan hasil akhir yang masih perlu diperkuat
 
-**Yang sudah dihasilkan:** data bersih, kelompok aktivitas, penjelasan ciri kelompok, riwayat perubahan, hasil pengujian 2026, serta peta untuk membacanya. Semua 11 notebook sudah pernah dijalankan dengan berhasil.
+**Yang sudah dihasilkan:** data bersih, kelompok aktivitas, penjelasan ciri kelompok, riwayat perubahan, hasil pengujian 2026, serta peta untuk membacanya. Semua 12 notebook sudah pernah dijalankan dengan berhasil.
 
 **Yang belum dapat dinyatakan kuat:** bahwa kelompok tersebut selalu stabil, setiap pergantian menunjukkan perubahan seismik yang nyata, atau enam kelompok merupakan satu-satunya pembagian yang benar.
 

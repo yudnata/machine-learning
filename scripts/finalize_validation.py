@@ -18,10 +18,11 @@ from src.common import load_prepared, load_model, write_json
 def finalize():
     cfg,panel,train,X,bundle,meta=load_prepared(ROOT)
     km,km_meta=load_model(ROOT,"kmeans")
+    kd,kd_meta=load_model(ROOT,"kmedoids")
     db,db_meta=load_model(ROOT,"dbscan")
     execution=json.loads((ROOT/"reports/validation/notebook_execution.json").read_text())
     assert execution["status"]=="PASS"
-    assert len(execution["notebooks"])==11
+    assert len(execution["notebooks"])==12
     assert all(n["code_cells"]==n["executed_cells"] for n in execution["notebooks"])
     assert panel.loc[panel["split"].eq("train")].groupby("grid_id")["period"].nunique().eq(20).all()
     np.testing.assert_allclose(bundle["scaler"].mean_,train[cfg["features"]].mean().to_numpy())
@@ -46,7 +47,7 @@ def finalize():
                 assert not any(o.output_type=="error" for o in cell.outputs)
         notebook_checks.append({"file":str(path.relative_to(ROOT)),"cells":len(nb.cells),"status":"PASS"})
     maps=[]
-    for method in ["kmeans","dbscan"]:
+    for method in ["kmeans","kmedoids","dbscan"]:
         path=ROOT/f"maps/{method}_profiles_by_quarter.html"
         text=path.read_text(encoding="utf-8")
         assert "select.onchange" in text
@@ -72,7 +73,7 @@ def finalize():
     n_dbscan_clusters=len(set(db.labels_)-{-1})
     content=f'''# Ringkasan hasil eksekusi
 
-Snapshot ini dihasilkan dari data EMSC nyata yang tersimpan di data/raw/monthly. Semua 11 notebook berhasil dijalankan pada kernel Python 3.12.11 (Seismic Research). Notebook asli tidak ditulis oleh pipeline ini.
+Snapshot ini dihasilkan dari data EMSC nyata yang tersimpan di data/raw/monthly. Semua 12 notebook berhasil dijalankan pada kernel Python 3.12.11 (Seismic Research). Notebook asli tidak ditulis oleh pipeline ini.
 
 - Baris mentah API: {meta['n_raw']:,}.
 - Baris bersih sesuai cakupan/tipe event: {meta['n_clean']:,}; ditolak: {meta['n_rejected']:,}.
@@ -80,6 +81,7 @@ Snapshot ini dihasilkan dari data EMSC nyata yang tersimpan di data/raw/monthly.
 - Cakupan historis: {meta['n_train_periods']} triwulan, 2021Q1-2025Q4.
 - Proporsi baris training dengan 1-4 event: {low_support_fraction:.2%}; ini batas penting interpretasi profil.
 - K-Means terpilih: k={km_meta['selected_k']}.
+- K-Medoids (PAM) terpilih: k={kd_meta['selected_k']}; kontrol pada k={kd_meta['matched_k_with_kmeans']} (sama dengan K-Means) disimpan terpisah.
 - DBSCAN terpilih: eps={db_meta['eps']:.6f}, min_samples={db_meta['min_samples']}, {n_dbscan_clusters} cluster, noise={(db.labels_==-1).mean():.2%}.
 - Status DBSCAN hanya diagnostik: {db_meta['diagnostic_only']}.
 - Testing lengkap: 2026Q1-Q3; 2026Q4 dipisahkan sebagai parsial.
@@ -90,7 +92,7 @@ Snapshot ini dihasilkan dari data EMSC nyata yang tersimpan di data/raw/monthly.
 {comparison.to_string(index=False)}
 ```
 
-Metrik perbandingan harus dibaca bersama scope. Tabel parameter search memakai rata-rata tiga sampel Silhouette; tabel ringkasan di atas memakai seed 42. K-Means/DBSCAN tidak memiliki accuracy tanpa label acuan.
+Metrik perbandingan harus dibaca bersama scope. Tabel parameter search memakai rata-rata tiga sampel Silhouette; tabel ringkasan di atas memakai seed 42. K-Means, K-Medoids, dan DBSCAN tidak memiliki accuracy tanpa label acuan. Peringkat tiga model, gambar clustering, dan kesimpulan akademik ada di notebook 07 serta `reports/evaluation/model_ranking.csv`.
 
 ## Testing temporal
 
@@ -98,7 +100,7 @@ Metrik perbandingan harus dibaca bersama scope. Tabel parameter search memakai r
 {holdout.to_string(index=False)}
 ```
 
-DBSCAN testing adalah ekstensi core-radius. Noise_fraction di tabel testing berarti seluruh titik yang tidak ditugaskan (termasuk ambigu), bukan hasil refit DBSCAN; ambiguous_fraction dilaporkan terpisah. K-Means selalu memberi label, sehingga assignment 100% bukan bukti semua pengamatan cocok dengan profil historis.
+DBSCAN testing adalah ekstensi core-radius. Noise_fraction di tabel testing berarti seluruh titik yang tidak ditugaskan (termasuk ambigu), bukan hasil refit DBSCAN; ambiguous_fraction dilaporkan terpisah. K-Means dan K-Medoids selalu memberi label, sehingga assignment 100% bukan bukti semua pengamatan cocok dengan profil historis.
 
 ## Sensitivitas resolusi dan magnitudo
 

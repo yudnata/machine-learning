@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def read_config(root=ROOT):
     root = Path(root)
     config = json.loads((root / "config.json").read_text(encoding="utf-8"))
-    for name in ["data/raw/monthly", "data/processed", "models/kmeans", "models/dbscan",
+    for name in ["data/raw/monthly", "data/processed", "models/kmeans", "models/kmedoids", "models/dbscan",
                  "reports/figures", "reports/evaluation", "reports/temporal",
                  "reports/stability", "reports/testing_2026", "maps", "reports/validation"]:
         (root / name).mkdir(parents=True, exist_ok=True)

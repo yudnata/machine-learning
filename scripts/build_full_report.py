@@ -68,12 +68,17 @@ NOTEBOOKS = {
     3: "notebooks/03_eda/03_eda.ipynb",
     4: "notebooks/04_kmeans/04_kmeans.ipynb",
     5: "notebooks/05_dbscan/05_dbscan.ipynb",
-    6: "notebooks/06_model_evaluation/06_model_evaluation.ipynb",
-    7: "notebooks/07_temporal_analysis/07_temporal_analysis.ipynb",
-    8: "notebooks/08_stability/08_stability.ipynb",
-    9: "notebooks/09_testing_2026/09_testing_2026.ipynb",
-    10: "notebooks/10_gis_mapping/10_gis_mapping.ipynb",
+    6: "notebooks/06_kmedoids/06_kmedoids.ipynb",
+    7: "notebooks/07_model_evaluation/07_model_evaluation.ipynb",
+    8: "notebooks/08_temporal_analysis/08_temporal_analysis.ipynb",
+    9: "notebooks/09_stability/09_stability.ipynb",
+    10: "notebooks/10_testing_2026/10_testing_2026.ipynb",
+    11: "notebooks/11_gis_mapping/11_gis_mapping.ipynb",
 }
+
+RANK_DIGITS = {"Silhouette (naik)": 1, "Davies-Bouldin (turun)": 1, "Calinski-Harabasz (naik)": 1, "Baris Silhouette negatif % (turun)": 1,
+               "Kestabilan subsampel ARI (naik)": 1, "Cakupan data % (naik)": 1, "Rata-rata peringkat (kualitas klaster)": 2, "Rata-rata peringkat (semua kriteria)": 2}
+METHOD_LABELS = {"kmeans": "K-Means", "kmedoids": "K-Medoids", "kmedoids_matched_k": "K-Medoids (k sama dengan K-Means)", "dbscan": "DBSCAN"}
 
 
 def notebook(stage, label, section=None):
@@ -96,6 +101,7 @@ def build():
     manifest = metadata("data/raw/collection_manifest.json")
     meta = metadata("data/processed/metadata.json")
     km_meta = metadata("models/kmeans/metadata.json")
+    kd_meta = metadata("models/kmedoids/metadata.json")
     db_meta = metadata("models/dbscan/metadata.json")
     raw = data("data/raw/events.csv")
     clean = data("data/processed/events_clean.csv")
@@ -105,8 +111,13 @@ def build():
     train = panel.loc[panel["split"].eq("train") & panel["state"].eq("ELIGIBLE")]
     test = data("reports/testing_2026/labels_all_2026.csv")
     km_search = data("models/kmeans/parameter_search.csv")
+    kd_search = data("models/kmedoids/parameter_search.csv")
+    kd_medoids = data("models/kmedoids/medoids.csv")
     db_search = data("models/dbscan/parameter_search.csv")
     comparison = data("reports/evaluation/model_comparison.csv")
+    ranking = data("reports/evaluation/model_ranking.csv")
+    criteria = data("reports/evaluation/model_criteria.csv")
+    subsample = data("reports/evaluation/subsample_stability.csv")
     holdout = data("reports/testing_2026/holdout_metrics.csv")
     agreement = metadata("reports/evaluation/agreement.json")
     environment = metadata("reports/validation/environment.json")
@@ -129,8 +140,9 @@ def build():
             "Nol kejadian": int(subset["state"].eq("NO_EVENTS").sum()), "Fitur belum lengkap": int(subset["state"].eq("INCOMPLETE_FEATURES").sum())})
     k_selected = km_search.loc[km_search["k"].eq(km_meta["selected_k"])].iloc[0]
     db_selected = db_search.loc[np.isclose(db_search["eps"], db_meta["eps"]) & db_search["min_samples"].eq(db_meta["min_samples"])].iloc[0]
-    hist_km = comparison.loc[comparison["model"].eq("kmeans")].iloc[0]
-    hist_db = comparison.loc[comparison["model"].eq("dbscan")].iloc[0]
+    kd_selected = kd_search.loc[kd_search["k"].eq(kd_meta["selected_k"])].iloc[0]
+    whole_rows = comparison.loc[comparison["evaluation_scope"].str.startswith("seluruh")]
+    fair_rows = comparison.loc[comparison["evaluation_scope"].str.startswith("subset identik")]
     low_support = float(train["low_support"].mean())
     n_train_grids = panel.loc[panel["split"].eq("train"), "grid_id"].nunique()
     n_all_grids = panel["grid_id"].nunique()
@@ -157,15 +169,16 @@ Dokumen ini menjelaskan apa yang dilakukan pada setiap tahap, berapa hasil aktua
 5. [EDA](#5-eda)
 6. [K-Means](#6-k-means)
 7. [DBSCAN](#7-dbscan)
-8. [Perbandingan model](#8-perbandingan-model)
-9. [Penamaan dan interpretasi kelompok](#9-penamaan-dan-interpretasi-kelompok)
-10. [Perubahan profil historis](#10-perubahan-profil-historis)
-11. [Uji kestabilan dan sensitivitas](#11-uji-kestabilan-dan-sensitivitas)
-12. [Testing 2026](#12-testing-2026)
-13. [GIS dan cara membaca peta](#13-gis-dan-cara-membaca-peta)
-14. [Verifikasi eksekusi](#14-verifikasi-eksekusi)
-15. [Temuan dan batas kesimpulan](#15-temuan-dan-batas-kesimpulan)
-16. [Daftar keluaran dan referensi](#16-daftar-keluaran-dan-referensi)
+8. [K-Medoids](#8-k-medoids)
+9. [Perbandingan tiga model](#9-perbandingan-tiga-model)
+10. [Penamaan dan interpretasi kelompok](#10-penamaan-dan-interpretasi-kelompok)
+11. [Perubahan profil historis](#11-perubahan-profil-historis)
+12. [Uji kestabilan dan sensitivitas](#12-uji-kestabilan-dan-sensitivitas)
+13. [Testing 2026](#13-testing-2026)
+14. [GIS dan cara membaca peta](#14-gis-dan-cara-membaca-peta)
+15. [Verifikasi eksekusi](#15-verifikasi-eksekusi)
+16. [Temuan dan batas kesimpulan](#16-temuan-dan-batas-kesimpulan)
+17. [Daftar keluaran dan referensi](#17-daftar-keluaran-dan-referensi)
 
 ## 1. Tujuan dan gambaran hasil
 
@@ -183,18 +196,19 @@ Hasil utama yang sudah diperoleh:
 | Training | {number(len(train))} observasi grid-triwulan layak dari {number(n_train_grids)} grid historis |
 | K-Means | k={km_meta['selected_k']} terpilih menurut aturan eksperimen; mean Silhouette seleksi {number(k_selected['silhouette'], 4)} |
 | DBSCAN | {int(db_selected['n_clusters'])} cluster; eps={number(db_meta['eps'], 6)}; min_samples={db_meta['min_samples']}; noise {pct(db_selected['noise_fraction'])} |
+| K-Medoids | k={kd_meta['selected_k']} terpilih menurut aturan yang sama dengan K-Means; mean Silhouette seleksi {number(kd_selected['silhouette'], 4)} |
 | Testing lengkap | {number(len(test_complete))} observasi layak pada Januari-September 2026 |
 | Testing parsial | {number(len(test_partial))} observasi layak pada Oktober 2026 sampai batas pengamatan |
-| GIS | 4 peta HTML interaktif dan 2 file geometri GeoJSON |
+| GIS | 6 peta HTML interaktif dan 3 file geometri GeoJSON |
 
 Angka Silhouette pada tabel ini berasal dari **rata-rata tiga sampel untuk seleksi parameter**. Bagian evaluasi di bawah memakai satu sampel tetap sehingga nilainya sedikit berbeda. Ini dua cara pelaporan pada model yang sama, bukan dua eksperimen dengan data berbeda.
 
 ## 2. Urutan notebook
 
-Alur pengerjaan adalah **collection -> preprocessing -> EDA -> K-Means dan DBSCAN -> evaluasi -> analisis perubahan -> sensitivitas -> testing -> GIS**. Artefak setiap tahap disimpan agar tahap sesudahnya dapat membaca hasilnya tanpa mengulang unduhan.
+Alur pengerjaan adalah **collection -> preprocessing -> EDA -> K-Means, DBSCAN, dan K-Medoids -> evaluasi tiga model -> analisis perubahan -> sensitivitas -> testing -> GIS**. Artefak setiap tahap disimpan agar tahap sesudahnya dapat membaca hasilnya tanpa mengulang unduhan.
 ''')
-    titles = ["Panduan dan environment", "Data collection", "Data preprocessing", "EDA", "K-Means", "DBSCAN", "Model evaluation", "Analisis temporal", "Stability", "Testing 2026", "GIS mapping"]
-    purposes = ["Memeriksa kernel, pustaka, dan konfigurasi", "Mengambil katalog EMSC dan mencatat cakupan", "Membersihkan data serta membuat panel dan scaler", "Memahami distribusi, katalog, dan korelasi", "Memilih k dan membentuk kelompok centroid", "Menguji eps/min_samples dan menemukan kelompok kepadatan", "Membandingkan struktur kelompok dan cakupan", "Mengukur perpindahan dan durasi profil", "Memeriksa pengaruh perubahan pengaturan", "Menerapkan model historis pada data baru", "Mengembalikan hasil ke polygon dan peta"]
+    titles = ["Panduan dan environment", "Data collection", "Data preprocessing", "EDA", "K-Means", "DBSCAN", "K-Medoids", "Model evaluation", "Analisis temporal", "Stability", "Testing 2026", "GIS mapping"]
+    purposes = ["Memeriksa kernel, pustaka, dan konfigurasi", "Mengambil katalog EMSC dan mencatat cakupan", "Membersihkan data serta membuat panel dan scaler", "Memahami distribusi, katalog, dan korelasi", "Memilih k dan membentuk kelompok centroid", "Menguji eps/min_samples dan menemukan kelompok kepadatan", "Memilih k dan membentuk kelompok berpusat pada medoid (PAM)", "Membandingkan tiga model: skor, gambar clustering, kestabilan, peringkat", "Mengukur perpindahan dan durasi profil", "Memeriksa pengaruh perubahan pengaturan", "Menerapkan model historis pada data baru", "Mengembalikan hasil ke polygon dan peta"]
     sections.append(table(pd.DataFrame([{"No.": f"{i:02d}", "Notebook": notebook(i, title), "Tujuan": purposes[i]} for i, title in enumerate(titles)])))
     sections.append(f'''
 
@@ -313,7 +327,7 @@ Silhouette menilai kedekatan suatu observasi dengan kelompoknya dibanding kelomp
 
 Aturan kode adalah memilih **rata-rata Silhouette tertinggi** dari tiga sampel, masing-masing maksimal 2.000 baris (seed 42, 7, dan 21). Jika sama, DBI lebih rendah lalu k lebih kecil menjadi pemecah seri. SD yang dilaporkan mengukur variasi antar-sampel skor, bukan interval kepercayaan inferensial.
 
-{table(km_search[['k','inertia','silhouette','silhouette_std','davies_bouldin']].rename(columns={'k':'k','inertia':'Inertia','silhouette':'Mean Silhouette','silhouette_std':'SD antar-sampel','davies_bouldin':'DBI'}), digits={'Inertia':2})}
+{table(km_search[['k','inertia','silhouette','silhouette_std','davies_bouldin']].rename(columns={'k':'k','inertia':'Inertia','silhouette':'Mean Silhouette','silhouette_std':'SD antar-sampel','davies_bouldin':'DBI'}), digits={'Inertia':2}, integers=('k',))}
 
 ### 6.3 Hasil yang dipilih
 
@@ -341,7 +355,7 @@ Kandidat `min_samples` adalah **5, 10, dan 20**. Kandidat eps diambil dari kuant
 
 ### 7.2 Penilaian skor, noise, dan fragmentasi
 
-Screening training menerima kandidat dengan 2-20 cluster, cluster terkecil minimal 20 observasi, noise maksimal 50%, dan cluster terbesar maksimal 95% data assigned. Batas ini adalah kebijakan analitis untuk menghindari dominasi satu cluster atau ratusan kelompok kecil. Batas tersebut disusun dari diagnosis training, bukan ketentuan alami seismologi. Pengaruhnya diuji pada notebook 08.
+Screening training menerima kandidat dengan 2-20 cluster, cluster terkecil minimal 20 observasi, noise maksimal 50%, dan cluster terbesar maksimal 95% data assigned. Batas ini adalah kebijakan analitis untuk menghindari dominasi satu cluster atau ratusan kelompok kecil. Batas tersebut disusun dari diagnosis training, bukan ketentuan alami seismologi. Pengaruhnya diuji pada notebook 09.
 
 Silhouette/DBI DBSCAN dihitung pada titik yang assigned, tanpa noise. Karena cakupannya dapat berbeda, skor harus selalu dibaca bersama noise dan ukuran cluster.
 
@@ -355,68 +369,135 @@ Kandidat dengan Silhouette sekitar 0,6045 menghasilkan **251 cluster** dan clust
 
 **Keluaran:** [seluruh kombinasi parameter](models/dbscan/parameter_search.csv), [model DBSCAN](models/dbscan/model.joblib), [label training](models/dbscan/training_labels.csv), [profil statistik](models/dbscan/profiles.csv), [PCA DBSCAN](reports/figures/dbscan_pca.png), dan [metadata](models/dbscan/metadata.json).
 
-## 8. Perbandingan model
+## 8. K-Medoids
 
-**Rujukan:** {notebook(6, '06 Model evaluation')}, terutama {notebook(6, 'bagian 2-3 untuk evaluasi', 2)}.
+**Rujukan:** {notebook(6, '06 K-Medoids')}; konsep pada {notebook(6, 'bagian 2', 2)}, kode algoritma pada {notebook(6, 'bagian 3', 3)}, hasil pada {notebook(6, 'bagian 5', 5)}, dan verifikasi medoid pada {notebook(6, 'bagian 6', 6)}.
 
-### 8.1 Evaluasi pada training layak
+### 8.1 Pembentukan kelompok dengan K-Medoids (PAM)
 
-Pada tabel ini, K-Means memakai semua observasi training layak. DBSCAN melaporkan noise pada semua observasi, tetapi metrik jarak hanya memakai observasi yang assigned. Sampel Silhouette menggunakan seed tetap 42, maksimal 2.000 baris; ini menjelaskan perbedaan kecil dari mean tiga sampel di tabel seleksi.
+K-Medoids memilih **k observasi nyata sebagai pusat kelompok (medoid)** dan meminimalkan jumlah jarak (tanpa kuadrat) setiap observasi ke medoid kelompoknya. Berbeda dari K-Means yang memakai rata-rata sebagai centroid, medoid adalah satu kotak-triwulan yang benar-benar ada di data. Algoritma yang dipakai adalah PAM (Kaufman & Rousseeuw, 1990): inisialisasi BUILD yang deterministik, lalu SWAP dengan rumus delta-biaya FastPAM (Schubert & Rousseeuw, 2021).
+
+Implementasi ditulis sendiri pada `src/kmedoids.py` karena `scikit-learn-extra` tidak dipakai. Kebenarannya diuji pada `tests/test_kmedoids.py`, termasuk pembandingan dengan optimum hasil pencarian menyeluruh pada data kecil. Seluruh {number(len(train))} baris training, lima fitur standar, jarak Euclidean, kandidat k=2..8, ukuran sampel Silhouette, dan aturan seleksi **identik dengan K-Means** agar dapat dibandingkan.
+
+### 8.2 Hasil pemilihan k
+
+{table(kd_search[['k','total_distance','silhouette','silhouette_std','davies_bouldin']].rename(columns={'k':'k','total_distance':'Jumlah jarak ke medoid','silhouette':'Mean Silhouette','silhouette_std':'SD antar-sampel','davies_bouldin':'DBI'}), digits={'Jumlah jarak ke medoid':2}, integers=('k',))}
+
+**k={kd_meta['selected_k']} terpilih** menurut aturan yang sama dengan K-Means (mean Silhouette tertinggi), dengan mean Silhouette **{number(kd_selected['silhouette'], 6)}**, DBI **{number(kd_selected['davies_bouldin'], 6)}**, kelompok terkecil {number(kd_selected['smallest_cluster_size'])} baris dan terbesar {pct(kd_selected['largest_cluster_fraction_assigned'])}. Pada k=2, partisi K-Medoids terutama memisahkan kedalaman (kelompok dangkal dan kelompok dalam), bukan tingkat aktivitas. Karena Silhouette cenderung menguntungkan k kecil, model K-Medoids pada **k={kd_meta['matched_k_with_kmeans']}** (sama dengan K-Means) disimpan sebagai kontrol dan dipakai pada bagian 9.
+
+![Pemilihan k K-Medoids](reports/figures/kmedoids_selection.png)
+
+Medoid yang terpilih adalah kotak-triwulan nyata, sehingga dapat ditelusuri ke katalog (lihat [medoid terpilih](models/kmedoids/medoids.csv)). PCA hanya proyeksi visual; model dipelajari pada lima fitur standar penuh ([PCA dan medoid](reports/figures/kmedoids_pca_medoids.png)).
+
+**Keluaran:** [seluruh kandidat k](models/kmedoids/parameter_search.csv), [model K-Medoids](models/kmedoids/model.joblib), [kontrol k sama dengan K-Means](models/kmedoids/model_matched_k.joblib), [label training](models/kmedoids/training_labels.csv), [profil statistik](models/kmedoids/profiles.csv), [medoid](models/kmedoids/medoids.csv), dan [metadata](models/kmedoids/metadata.json).
+
+## 9. Perbandingan tiga model
+
+**Rujukan:** {notebook(7, '07 Model evaluation')}, terutama {notebook(7, 'bagian 3 ringkasan skor', 3)}, {notebook(7, 'bagian 8 gambar clustering', 8)}, {notebook(7, 'bagian 14 peringkat', 14)}, dan {notebook(7, 'bagian 15 kesimpulan akademik', 15)}.
+
+### 9.1 Evaluasi pada training layak
+
+K-Means dan K-Medoids memakai semua observasi training layak. DBSCAN melaporkan noise pada semua observasi, tetapi metrik jarak hanya memakai observasi yang assigned. Sampel Silhouette menggunakan seed tetap 42, maksimal 2.000 baris; ini menjelaskan perbedaan kecil dari mean tiga sampel di tabel seleksi. Calinski-Harabasz (CH) ditambahkan sebagai ukuran ketiga.
 ''')
     def comparison_table(frame):
-        return table(frame[["model", "n_rows", "n_assigned", "noise_fraction", "silhouette", "davies_bouldin"]].rename(columns={
-            "model":"Metode", "n_rows":"Baris input", "n_assigned":"Assigned", "noise_fraction":"Tidak assigned", "silhouette":"Silhouette", "davies_bouldin":"DBI"}), percentages=("Tidak assigned",))
-    sections.append(comparison_table(comparison.iloc[:2]))
+        frame = frame.assign(model=frame["model"].map(METHOD_LABELS))
+        return table(frame[["model", "n_clusters", "n_rows", "n_assigned", "noise_fraction", "silhouette", "davies_bouldin", "calinski_harabasz"]].rename(columns={
+            "model":"Metode", "n_clusters":"Cluster", "n_rows":"Baris input", "n_assigned":"Assigned", "noise_fraction":"Tidak assigned", "silhouette":"Silhouette", "davies_bouldin":"DBI", "calinski_harabasz":"CH"}),
+            percentages=("Tidak assigned",), digits={"CH":1}, integers=("Cluster",))
+    sections.append(comparison_table(whole_rows))
+    fair = fair_rows.set_index("model")
+    ranking_table = ranking.rename(columns={"Unnamed: 0": "Model"})
+    criteria_table = criteria.rename(columns={"Unnamed: 0": "Model"})
+    pairwise = agreement["pairwise_ari"]
     sections.append(f'''
 
-### 8.2 Perbandingan pada observasi yang sama
+### 9.2 Perbandingan pada observasi yang sama
 
-Agar perbandingan lebih setara, kedua model dievaluasi kembali pada **{number(agreement['n_common_assigned'])} baris yang sama**, yaitu baris assigned DBSCAN. Cakupannya **{pct(agreement['fraction_common_assigned'])}** dari training layak.
+Agar perbandingan setara, ketiga model dievaluasi kembali pada **{number(agreement['n_common_assigned'])} baris yang sama**, yaitu baris assigned DBSCAN. Cakupannya **{pct(agreement['fraction_common_assigned'])}** dari training layak. Baris K-Medoids (k sama dengan K-Means) adalah kontrol granularitas.
 
-{comparison_table(comparison.iloc[2:])}
+{comparison_table(fair_rows)}
 
-Dalam konfigurasi yang diuji, **K-Means mempunyai pemisahan cluster lebih baik menurut Silhouette dan DBI**, termasuk pada subset identik. Kesimpulan ini berlaku pada ruang fitur dan kandidat sekarang. Ini bukan akurasi terhadap kebenaran geologi dan tidak menyatakan K-Means selalu lebih baik untuk semua data gempa.
+Pada subset identik, Silhouette K-Means **{number(fair.loc['kmeans','silhouette'], 4)}**, K-Medoids **{number(fair.loc['kmedoids','silhouette'], 4)}**, dan DBSCAN **{number(fair.loc['dbscan','silhouette'], 4)}**. Selisih K-Means dan K-Medoids pada Silhouette ({number(abs(fair.loc['kmedoids','silhouette']-fair.loc['kmeans','silhouette']), 4)}) lebih kecil daripada simpangan baku antarsampel Silhouette pada seleksi k (sekitar {number(max(k_selected['silhouette_std'], kd_selected['silhouette_std']), 4)}), sehingga keduanya dianggap seri. K-Means lebih baik pada DBI ({number(fair.loc['kmeans','davies_bouldin'], 4)} berbanding {number(fair.loc['kmedoids','davies_bouldin'], 4)}) dan CH ({number(fair.loc['kmeans','calinski_harabasz'], 0)} berbanding {number(fair.loc['kmedoids','calinski_harabasz'], 0)}). DBSCAN terendah pada ketiga ukuran. Semua skor ini bukan akurasi terhadap kebenaran geologi.
 
-Kesepakatan partisi K-Means dan DBSCAN pada subset assigned menghasilkan **ARI={number(agreement['ari_common_assigned'], 4)}**. ARI membandingkan apakah pasangan observasi dikelompokkan bersama oleh dua partisi. ARI 1 berarti partisi identik; angka lebih rendah menunjukkan perbedaan. Nilai 0,2665 menunjukkan kedua metode tidak menghasilkan pengelompokan yang sama, meskipun memakai fitur yang sama. Nomor cluster tidak perlu disamakan untuk menghitung ARI.
+### 9.3 K-Means dan K-Medoids pada k yang sama
 
-**Keluaran:** [perbandingan model](reports/evaluation/model_comparison.csv) dan [kesepakatan partisi](reports/evaluation/agreement.json).
+K-Medoids memilih k={kd_meta['selected_k']}, sedangkan K-Means k={km_meta['selected_k']}. Silhouette dan DBI bergantung pada jumlah kelompok, sehingga membandingkan skor keduanya pada k berbeda mencampur pengaruh algoritma dan pengaruh k. Pada **k={km_meta['selected_k']} yang sama**, K-Means unggul atas K-Medoids pada Silhouette ({number(fair.loc['kmeans','silhouette'], 4)} berbanding {number(fair.loc['kmedoids_matched_k','silhouette'], 4)}), DBI ({number(fair.loc['kmeans','davies_bouldin'], 4)} berbanding {number(fair.loc['kmedoids_matched_k','davies_bouldin'], 4)}), dan CH. Pada seluruh k=2..8, K-Means memiliki Silhouette lebih tinggi pada {int((km_search.set_index('k')['silhouette'] >= kd_search.set_index('k')['silhouette']).sum())} dari {len(km_search)} nilai k.
 
-## 9. Penamaan dan interpretasi kelompok
+![K-Means dan K-Medoids pada setiap k](reports/figures/evaluation_k_curves.png)
 
-**Rujukan:** {notebook(4, '04 K-Means bagian 6: aturan penamaan', 6)} dan {notebook(4, 'bagian 7: tabel hasil nama', 7)}; {notebook(5, '05 DBSCAN bagian 5: aturan penamaan', 5)} dan {notebook(5, 'bagian 6: tabel hasil nama', 6)}.
+Catatan metodologis: DBI dan CH dihitung relatif terhadap rata-rata kelompok sehingga secara struktural lebih sejalan dengan K-Means. Silhouette memakai jarak antarpasangan dan tidak bergantung pada jenis pusat.
+
+### 9.4 Gambar hasil clustering dan kualitas per baris
+
+![Hasil clustering pada proyeksi PCA](reports/figures/evaluation_cluster_visual_pca.png)
+
+![Hasil clustering pada fitur frekuensi dan kedalaman](reports/figures/evaluation_cluster_visual_features.png)
+
+![Diagram Silhouette per baris](reports/figures/evaluation_silhouette_diagram.png)
+
+Data membentuk kontinum tanpa celah kepadatan yang tegas. Ini interpretasi visual yang sejalan dengan sulitnya DBSCAN menemukan parameter yang menghasilkan kelompok bersih; bukan uji formal. Kelompok DBSCAN saling tumpang tindih pada proyeksi PCA dan baris noise tersebar di tepi serta area campuran. Beberapa kelompok K-Means juga tampak bertumpuk karena proyeksi 2D meringkas lima dimensi. K-Medoids pada k={kd_meta['selected_k']} membagi kontinum menjadi dua bagian besar. Proporsi baris dengan Silhouette negatif: K-Means {number(criteria_table.iloc[0]['Baris Silhouette negatif % (turun)'], 2)}%, K-Medoids {number(criteria_table.iloc[1]['Baris Silhouette negatif % (turun)'], 2)}%, DBSCAN {number(criteria_table.iloc[2]['Baris Silhouette negatif % (turun)'], 2)}%.
+
+### 9.5 Kestabilan, kesepakatan, dan peringkat
+
+Kestabilan terhadap subsampel 80% baris (fit ulang dengan parameter tetap, ARI pada baris yang ditugaskan kedua partisi): K-Means {number(subsample.loc[subsample['method'].eq('kmeans'),'ari_common_assigned'].mean(), 3)}, K-Medoids {number(subsample.loc[subsample['method'].eq('kmedoids'),'ari_common_assigned'].mean(), 3)}, DBSCAN {number(subsample.loc[subsample['method'].eq('dbscan'),'ari_common_assigned'].mean(), 3)}. Ketiganya stabil sehingga kriteria ini tidak membedakan model dengan tajam, dan partisi kasar lebih mudah direproduksi.
+
+Kesepakatan partisi (ARI, baris assigned DBSCAN): K-Means dengan K-Medoids **{number(pairwise['kmeans_vs_kmedoids']['ari_common_assigned'], 4)}**, K-Means dengan DBSCAN **{number(pairwise['kmeans_vs_dbscan']['ari_common_assigned'], 4)}**, K-Medoids dengan DBSCAN **{number(pairwise['kmedoids_vs_dbscan']['ari_common_assigned'], 4)}**. Ketiga metode tidak membagi data dengan cara yang sama. Nomor cluster tidak perlu disamakan untuk menghitung ARI.
+
+Peringkat gabungan memberi bobot sama pada enam kriteria. Selisih dianggap seri bila tidak melebihi toleransi (Silhouette: simpangan baku antarsampel; kestabilan: 0,01; cakupan: 0,5 poin persen).
+
+{table(ranking_table, digits=RANK_DIGITS)}
+
+### 9.6 Kesimpulan akademik
+
+- **K-Means (k={km_meta['selected_k']}) direkomendasikan sebagai model utama.** Peringkat kualitas klaster seri antara K-Means dan K-Medoids; seri dipecahkan oleh kontrol granularitas, tempat K-Means unggul pada keempat ukuran pada k yang sama.
+- **K-Medoids (k={kd_meta['selected_k']})** setara pada Silhouette tetapi memakai partisi yang jauh lebih kasar. Nilai tambahnya bersifat non-skor: pusat berupa kotak-triwulan nyata, hasil deterministik, dan pusat tidak ditarik pencilan.
+- **DBSCAN** menandai baris di luar struktur kepadatan, tetapi pemisahannya paling lemah menurut seluruh ukuran internal.
+- Silhouette, DBI, dan CH mengasumsikan kelompok kompak berbentuk bola, sehingga tidak adil bagi DBSCAN. Evaluasi memakai data training yang sama dengan pemilihan parameter, sehingga bersifat eksploratif dan cenderung optimistis.
+
+**Keluaran:** [perbandingan model](reports/evaluation/model_comparison.csv), [kesepakatan partisi](reports/evaluation/agreement.json), [peringkat](reports/evaluation/model_ranking.csv), [nilai kriteria](reports/evaluation/model_criteria.csv), dan [kestabilan subsampel](reports/evaluation/subsample_stability.csv).
+
+## 10. Penamaan dan interpretasi kelompok
+
+**Rujukan:** {notebook(4, '04 K-Means bagian 6: aturan penamaan', 6)} dan {notebook(4, 'bagian 7: tabel hasil nama', 7)}; {notebook(5, '05 DBSCAN bagian 5: aturan penamaan', 5)} dan {notebook(5, 'bagian 6: tabel hasil nama', 6)}; {notebook(6, '06 K-Medoids bagian 7-8', 7)}.
 
 Kelompok dibentuk terlebih dahulu oleh algoritma. Sesudah itu peneliti membaca statistik training lalu memberi **nama deskriptif**. Huruf A/B/C hanya pengenal kelompok. Nama tidak menjadi target training, tidak mengubah keanggotaan, dan tidak ditentukan dari testing 2026.
 
 Fungsi `profile_descriptions()` menggunakan aturan penulisan yang terlihat dalam notebook: mean depth <70 km diringkas sebagai cenderung dangkal; kelompok dengan mean jumlah event terbesar di antara cluster metode itu dijelaskan sebagai kejadian lebih sering. Mean magnitudo dan depth ditulis pada nama/legenda untuk menjaga keterlacakan. Ini aturan **penerjemahan hasil**, bukan aturan pembentukan cluster.
 
-### 9.1 Profil K-Means
+### 10.1 Profil K-Means
 
 {profile_table('kmeans')}
 
 Contoh membaca Kelompok F: rata-rata sekitar **8,93 kejadian per kotak per triwulan**, mean magnitudo **3,67**, dan mean depth **38,30 km**. Karena jumlah rata-ratanya terbesar di antara enam cluster dan mean depth di bawah 70 km, nama ringkasnya menjadi **Kejadian lebih sering; cenderung dangkal**. Kejadian lebih sering tidak berarti risiko tertinggi.
 
-### 9.2 Profil DBSCAN
+### 10.2 Profil DBSCAN
 
 {profile_table('dbscan')}
 
 Baris NOISE adalah statistik observasi historis yang tidak masuk cluster; baris itu tidak diberi huruf sebagai kelompok baru. **Kelompok A K-Means tidak sama dengan Kelompok A DBSCAN.** Angka pada tabel adalah rata-rata ciri grid-triwulan historis, bukan janji bahwa setiap kotak-periode memiliki nilai persis sama.
 
-**Keluaran nama yang mudah dibaca:** [tabel interpretasi K-Means](reports/evaluation/kmeans_profile_interpretation.csv), [tabel interpretasi DBSCAN](reports/evaluation/dbscan_profile_interpretation.csv), [penjelasan legenda K-Means](reports/evaluation/kmeans_profile_explanations.json), dan [penjelasan legenda DBSCAN](reports/evaluation/dbscan_profile_explanations.json). [Panduan membaca hasil](docs/cara_menjelaskan_hasil.md) membahas perbedaan antara kelompok hasil algoritma dan nama dari peneliti.
+### 10.3 Profil K-Medoids
 
-## 10. Perubahan profil historis
+{profile_table('kmedoids')}
 
-**Rujukan:** {notebook(7, '07 Temporal analysis')}; definisi pasangan pada bagian 2, ekspor hasil pada bagian 3, dan riwayat kotak pada bagian 5.
+Nama kelompok K-Medoids memakai aturan yang sama. Pada k={kd_meta['selected_k']}, kelompok dibedakan terutama oleh kedalaman, sehingga nama "kejadian lebih sering" hanya menunjukkan selisih rata-rata jumlah kejadian yang kecil antarkelompok, bukan pola aktivitas yang kontras.
 
-### 10.1 Unit dan aturan perbandingan
+**Keluaran nama yang mudah dibaca:** [tabel interpretasi K-Means](reports/evaluation/kmeans_profile_interpretation.csv), [tabel interpretasi K-Medoids](reports/evaluation/kmedoids_profile_interpretation.csv), [tabel interpretasi DBSCAN](reports/evaluation/dbscan_profile_interpretation.csv), [penjelasan legenda K-Means](reports/evaluation/kmeans_profile_explanations.json), [penjelasan legenda K-Medoids](reports/evaluation/kmedoids_profile_explanations.json), dan [penjelasan legenda DBSCAN](reports/evaluation/dbscan_profile_explanations.json). [Panduan membaca hasil](docs/cara_menjelaskan_hasil.md) membahas perbedaan antara kelompok hasil algoritma dan nama dari peneliti.
+
+## 11. Perubahan profil historis
+
+**Rujukan:** {notebook(8, '08 Temporal analysis')}; definisi pasangan pada bagian 2, ekspor hasil pada bagian 3, dan riwayat kotak pada bagian 5.
+
+### 11.1 Unit dan aturan perbandingan
 
 Setiap grid dilacak sepanjang 20 triwulan historis. Pergantian dihitung hanya pada **dua triwulan berurutan yang sama-sama mempunyai kelompok cluster**. Nol event, fitur belum lengkap, noise, dan celah periode memutus rangkaian. Dengan demikian, berpindah dari NO_EVENTS ke suatu cluster tidak dihitung sebagai pergantian profil cluster.
 
 Stability rate dihitung sebagai `1 - jumlah pergantian / jumlah pasangan yang dapat dibandingkan`. Jika tidak ada pasangan yang layak, nilainya tidak dihitung. Durasi bertahan dihitung dalam jumlah triwulan berturut-turut, bukan hari.
 
-### 10.2 Hasil aktual
+### 11.2 Hasil aktual
 ''')
     temporal_rows = []
-    for method in ["kmeans", "dbscan"]:
+    for method in ["kmeans", "kmedoids", "dbscan"]:
         summary = data(f"reports/temporal/{method}/grid_stability.csv")
         spells = data(f"reports/temporal/{method}/profile_spells.csv")
         temporal_rows.append({"Metode": method, "Grid historis": len(summary), "Grid dengan pasangan layak": int(summary["n_comparable_pairs"].gt(0).sum()),
@@ -426,15 +507,15 @@ Stability rate dihitung sebagai `1 - jumlah pergantian / jumlah pasangan yang da
     sections.append(table(pd.DataFrame(temporal_rows), percentages=("Median stability rate",), integers=("Median pasangan / grid",)))
     sections.append('''
 
-Jumlah pergantian adalah jumlah **pasangan grid-triwulan yang berubah**, bukan jumlah wilayah unik. Median stability rate dihitung hanya pada grid yang nilainya dapat dihitung. Median jumlah pasangan memakai seluruh grid historis. Median pasangan yang hanya 1-2 menunjukkan dukungan temporal banyak grid masih terbatas.
+Jumlah pergantian adalah jumlah **pasangan grid-triwulan yang berubah**, bukan jumlah wilayah unik. Stability rate K-Medoids (k=2) tidak sebanding langsung dengan K-Means (k=6): partisi dengan dua kelompok memiliki lebih sedikit peluang berganti. Median stability rate dihitung hanya pada grid yang nilainya dapat dihitung. Median jumlah pasangan memakai seluruh grid historis. Median pasangan yang hanya 1-2 menunjukkan dukungan temporal banyak grid masih terbatas.
 
 Stability rate DBSCAN tidak dapat langsung disebut lebih baik daripada K-Means karena DBSCAN mengecualikan noise dan menghasilkan lebih sedikit pasangan layak. Kedua metode juga memakai definisi kelompok yang berbeda.
 
-### 10.3 Matriks transisi
+### 11.3 Matriks transisi
 
-Baris berarti kelompok sebelumnya; kolom berarti kelompok berikutnya. Nilai diagonal adalah bertahan di kelompok yang sama, sedangkan nilai di luar diagonal adalah pergantian. Huruf pada setiap matriks merujuk tabel nama metode yang sama pada bagian 9. Isi matriks adalah jumlah pasangan berurutan.
+Baris berarti kelompok sebelumnya; kolom berarti kelompok berikutnya. Nilai diagonal adalah bertahan di kelompok yang sama, sedangkan nilai di luar diagonal adalah pergantian. Huruf pada setiap matriks merujuk tabel nama metode yang sama pada bagian 10. Isi matriks adalah jumlah pasangan berurutan.
 ''')
-    for method in ["kmeans", "dbscan"]:
+    for method in ["kmeans", "kmedoids", "dbscan"]:
         matrix = data(f"reports/temporal/{method}/profile_transitions.csv").set_index("previous_profile")
         matrix.index = [chr(65 + int(code.rsplit("_P", 1)[1])) for code in matrix.index]
         matrix.columns = [chr(65 + int(code.rsplit("_P", 1)[1])) for code in matrix.columns]
@@ -445,15 +526,15 @@ Misalnya, pada K-Means terdapat **675 pasangan A -> E**. Itu berarti pada 675 pa
 
 ![Matriks transisi K-Means](reports/figures/kmeans_transitions.png)
 
-**Keluaran:** [riwayat K-Means](reports/temporal/kmeans/history.csv), [kestabilan per grid K-Means](reports/temporal/kmeans/grid_stability.csv), [durasi K-Means](reports/temporal/kmeans/profile_spells.csv), [probabilitas transisi K-Means](reports/temporal/kmeans/transition_probabilities.csv), serta [folder hasil DBSCAN](reports/temporal/dbscan/). Matriks seluruh status, termasuk NO_EVENTS dan NOISE, tersedia sebagai `state_transitions.csv` pada masing-masing folder metode.
+**Keluaran:** [riwayat K-Means](reports/temporal/kmeans/history.csv), [kestabilan per grid K-Means](reports/temporal/kmeans/grid_stability.csv), [durasi K-Means](reports/temporal/kmeans/profile_spells.csv), [probabilitas transisi K-Means](reports/temporal/kmeans/transition_probabilities.csv), serta [folder hasil K-Medoids](reports/temporal/kmedoids/) dan [folder hasil DBSCAN](reports/temporal/dbscan/). Matriks seluruh status, termasuk NO_EVENTS dan NOISE, tersedia sebagai `state_transitions.csv` pada masing-masing folder metode.
 
-## 11. Uji kestabilan dan sensitivitas
+## 12. Uji kestabilan dan sensitivitas
 
-**Rujukan:** [08 Stability](notebooks/08_stability/08_stability.ipynb). Seluruh eksperimen bagian ini menggunakan training 2021-2025. Data 2026 tidak dipakai untuk memilih parameter.
+**Rujukan:** [09 Stability](notebooks/09_stability/09_stability.ipynb). Seluruh eksperimen bagian ini menggunakan training 2021-2025. Data 2026 tidak dipakai untuk memilih parameter.
 
 Tujuannya memeriksa apakah kelompok berubah ketika pengaturan diubah. ARI tinggi berarti partisi pada observasi yang sama lebih serupa. ARI bukan akurasi atau bukti bahwa mekanisme fisik telah teridentifikasi. Pengujian ini merupakan sensitivitas deskriptif, belum spatial block bootstrap atau interval ketidakpastian inferensial.
 
-### 11.1 Seed, k, eps, dan min_samples
+### 12.1 Seed, k, eps, dan min_samples
 ''')
     params = data("reports/stability/parameter_ari.csv")
     sections.append(table(params[["method", "perturbation", "value", "ari_all", "ari_common_assigned", "common_assigned_fraction"]].rename(columns={
@@ -464,7 +545,7 @@ K-Means dengan k tetap 6 relatif konsisten terhadap seed: ARI sekitar **0,9924-0
 
 DBSCAN berubah ketika eps/min_samples diubah. ARI yang memasukkan noise dapat dipengaruhi kesamaan status noise; karena itu tersedia ARI hanya pada observasi yang assigned oleh kedua partisi, beserta cakupannya. ARI tinggi pada subset kecil atau satu cluster harus dibaca hati-hati.
 
-### 11.2 Resolusi grid dan ambang magnitudo
+### 12.2 Resolusi grid dan ambang magnitudo
 
 Baris grid pada 25 km tidak identik dengan baris grid 50 km atau 100 km. Karena itu, label dipetakan kembali ke **event ID historis yang sama**, baru ARI dihitung pada event bersama. Ukuran ini bersifat **event-weighted**: wilayah dengan banyak event mempunyai pengaruh lebih besar, dan grid tanpa event tidak ikut perbandingan ini. Kolom overlap melaporkan bagian event acuan yang masih dibandingkan.
 ''')
@@ -475,7 +556,7 @@ Baris grid pada 25 km tidak identik dengan baris grid 50 km atau 100 km. Karena 
 
 Saat konfigurasi sama dengan baseline (50 km dan M>=3), kontrol menghasilkan ARI **1,0**. K-Means pada grid 25 km mempunyai ARI **0,4428** dan pada 100 km **0,3193** terhadap baseline. Hasil ini menunjukkan ketergantungan pada resolusi, sehingga belum tepat menyebut seluruh profil stabil lintas ukuran grid. Perubahan ambang magnitudo juga mengubah partisi serta event yang dapat dibandingkan.
 
-### 11.3 Dukungan jumlah kejadian per kotak
+### 12.3 Dukungan jumlah kejadian per kotak
 
 Pada training utama, **{number(train['low_support'].sum())} dari {number(len(train))} baris ({pct(low_support)}) hanya memuat 1-4 event**. Jika hanya satu event, mean dan maksimum magnitudo sama, sedangkan proporsi dangkal hanya 0 atau 1. Hal ini dapat menciptakan struktur geometris yang belum tentu mencerminkan profil regional yang kuat.
 
@@ -488,25 +569,25 @@ Eksperimen berikut memfilter training dengan dukungan minimal 1, 3, 5 dan 10 eve
 
 Dengan minimal 5 event, hanya **1.809 baris atau 13,43%** training tersisa. ARI K-Means pada subset itu sekitar **0,0671** setelah fitting ulang. Dengan minimal 10 event tersisa 435 baris. Artinya, interpretasi profil utama sangat bergantung pada banyak unit berdukungan rendah. Ini temuan keterbatasan yang perlu dilaporkan, bukan disembunyikan dengan memilih skor terbaik.
 
-### 11.4 Kebijakan screening DBSCAN
+### 12.4 Kebijakan screening DBSCAN
 
 Aturan ukuran cluster dan jumlah cluster juga diuji. Jika batas maksimal 300 cluster serta ukuran minimal 5 diterima, kandidat terpilih bergeser menjadi **95 cluster** dengan mean Silhouette sekitar **0,4976**. Jika ukuran minimal dinaikkan menjadi 50 pada kandidat yang tersedia, **tidak ada kandidat yang lolos**. Ini memperlihatkan bahwa pilihan tujuh cluster bergantung pada kebijakan screening, bukan temuan jumlah kelompok yang bebas dari keputusan peneliti.
 
 **Keluaran:** [ARI parameter](reports/stability/parameter_ari.csv), [sensitivitas grid dan magnitudo](reports/stability/grid_and_magnitude_ari.csv), [minimum event](reports/stability/minimum_event_support.csv), dan [kebijakan seleksi DBSCAN](reports/stability/dbscan_selection_policy.csv).
 
-## 12. Testing 2026
+## 13. Testing 2026
 
-**Rujukan:** [09 Testing 2026](notebooks/09_testing_2026/09_testing_2026.ipynb), terutama bagian 2-4 untuk aturan dan eksekusi, bagian 5 untuk quarter, serta bagian 6 untuk hasil dengan nama kelompok historis.
+**Rujukan:** [10 Testing 2026](notebooks/10_testing_2026/10_testing_2026.ipynb), terutama bagian 2-4 untuk aturan dan eksekusi, bagian 5 untuk quarter, serta bagian 6 untuk hasil dengan nama kelompok historis.
 
-### 12.1 Tujuan pengujian
+### 13.1 Tujuan pengujian
 
 Testing memeriksa apakah kelompok historis dapat diterapkan pada aktivitas yang tercatat setelah periode training. Centroid, core points, scaler dan parameter dibekukan dari 2021-2025. Tidak ada label ground truth untuk menghitung accuracy, precision atau recall. Ini juga bukan prediksi kapan gempa akan terjadi.
 
-K-Means menggunakan `predict()`, yaitu centroid historis terdekat. Karena selalu memberikan label pada baris layak, cakupan 100% tidak otomatis membuktikan semua data baru cocok. Jarak centroid di atas kuantil 99% training diberi flag eksploratif.
+K-Means menggunakan `predict()`, yaitu centroid historis terdekat. K-Medoids menugaskan baris ke medoid historis terdekat (jarak Euclidean pada ruang fitur standar training). Karena keduanya selalu memberikan label pada baris layak, cakupan 100% tidak otomatis membuktikan semua data baru cocok. Jarak ke pusat kelompok di atas kuantil 99% training diberi flag eksploratif.
 
 DBSCAN tidak mempunyai `predict()` bawaan. Pipeline memakai **aturan tambahan core-radius**: tepat satu cluster core dalam eps -> ditugaskan; tidak ada -> `NO_CORE_MATCH`; lebih dari satu -> `AMBIGUOUS_CORE_MATCH`. Ini penerapan tambahan terhadap model historis, bukan fitting DBSCAN baru pada 2026.
 
-### 12.2 Cakupan periode dan kecocokan
+### 13.2 Cakupan periode dan kecocokan
 ''')
     test_rows = []
     for period, group in test.groupby("period"):
@@ -523,15 +604,15 @@ Testing lengkap Q1-Q3 mempunyai **{number(len(test_complete))} baris layak**. Ek
 
 Q4 hanya mencakup 1 Oktober sampai sebelum 26 Oktober, sehingga bukan triwulan penuh. Meskipun frekuensinya dinormalisasi terhadap durasi, maksimum magnitudo dan ringkasan lain tidak menjadi sepenuhnya setara dengan tiga bulan lengkap.
 
-### 12.3 Skor pada data baru
+### 13.3 Skor pada data baru
 
 {table(holdout[['split','method','n_rows','n_assigned','noise_fraction','silhouette','davies_bouldin']].rename(columns={'split':'Bagian','method':'Metode','n_rows':'Baris layak','n_assigned':'Assigned','noise_fraction':'Tidak assigned','silhouette':'Silhouette','davies_bouldin':'DBI'}), percentages=('Tidak assigned',))}
 
-Untuk Q1-Q3, Silhouette K-Means adalah **0,3762** dan DBI **0,9735**. Nilai tersebut menunjukkan profil historis masih menghasilkan pemisahan geometris pada data baru, dengan kualitas berbeda dari training. DBSCAN core-radius mempunyai Silhouette **0,1556** dan DBI **2,0135** pada subset assigned.
+Untuk Q1-Q3, Silhouette K-Means adalah **0,3762** dan DBI **0,9735**. Nilai tersebut menunjukkan profil historis masih menghasilkan pemisahan geometris pada data baru, dengan kualitas berbeda dari training. DBSCAN core-radius mempunyai Silhouette **0,1556** dan DBI **2,0135** pada subset assigned. K-Medoids pada Q1-Q3 mempunyai Silhouette **{number(holdout.loc[holdout['split'].eq('test') & holdout['method'].eq('kmedoids'), 'silhouette'].iloc[0], 4)}** dan DBI **{number(holdout.loc[holdout['split'].eq('test') & holdout['method'].eq('kmedoids'), 'davies_bouldin'].iloc[0], 4)}** (k={kd_meta['selected_k']}, sehingga tidak sebanding langsung dengan K-Means k={km_meta['selected_k']}).
 
-Tabel testing ini **belum membandingkan kedua metode pada subset assigned identik**, sehingga skor tidak boleh dijadikan perbandingan sepenuhnya setara tanpa melihat cakupan. Angka tidak assigned DBSCAN mencakup tidak cocok dan ambigu; bukan noise dari refit model. Silhouette Q4 yang lebih tinggi pada subset tertentu juga tidak otomatis berarti Q4 lebih baik karena periodenya parsial dan cakupan assigned lebih kecil.
+Tabel testing ini **belum membandingkan ketiga metode pada subset assigned identik**, sehingga skor tidak boleh dijadikan perbandingan sepenuhnya setara tanpa melihat cakupan. Angka tidak assigned DBSCAN mencakup tidak cocok dan ambigu; bukan noise dari refit model. Silhouette Q4 yang lebih tinggi pada subset tertentu juga tidak otomatis berarti Q4 lebih baik karena periodenya parsial dan cakupan assigned lebih kecil.
 
-### 12.4 Perubahan distribusi fitur
+### 13.4 Perubahan distribusi fitur
 ''')
     drift = data("reports/testing_2026/feature_drift.csv")
     sections.append(table(drift.rename(columns={"feature":"Fitur","train_mean":"Mean training","test_complete_mean":"Mean testing lengkap","standardized_mean_shift":"Selisih dalam SD training"})))
@@ -541,7 +622,7 @@ Selisih standar positif berarti mean testing lebih tinggi daripada training pada
 
 Ambang flag jarak centroid K-Means adalah **{number(test_method['kmeans_distance_q99_training'], 4)}** pada ruang standar. Pada testing lengkap terdapat **{number(test_complete['outside_training_distance_q99'].sum())} baris ({pct(test_complete['outside_training_distance_q99'].mean())})** di atas ambang; Q4 parsial mempunyai **{number(test_partial['outside_training_distance_q99'].sum())}** baris. Flag ini bukan probabilitas gempa atau uji signifikansi anomali fisik.
 
-### 12.5 Contoh satu kotak yang dapat ditelusuri
+### 13.5 Contoh satu kotak yang dapat ditelusuri
 
 Contoh aktual berikut memakai grid **5_-13**, berpusat sekitar 120,49 BT dan -8,15 LS. Jumlah event selalu merujuk kejadian M >=3 dalam katalog. Nama berikut merupakan hasil K-Means.
 ''')
@@ -559,30 +640,32 @@ File perubahan testing membandingkan setiap quarter 2026 terhadap baseline **202
 
 **Keluaran:** [label semua 2026](reports/testing_2026/labels_all_2026.csv), [quarter lengkap](reports/testing_2026/labels_complete_quarters.csv), [quarter parsial](reports/testing_2026/labels_partial_quarter.csv), [skor testing](reports/testing_2026/holdout_metrics.csv), [drift fitur](reports/testing_2026/feature_drift.csv), [perubahan dari 2025Q4](reports/testing_2026/changes_from_2025Q4.csv), dan [metodologi testing](reports/testing_2026/methodology.json).
 
-## 13. GIS dan cara membaca peta
+## 14. GIS dan cara membaca peta
 
-**Rujukan:** [10 GIS mapping](notebooks/10_gis_mapping/10_gis_mapping.ipynb), bagian 2 untuk penjelasan nama, bagian 3 untuk peta dasar dan pemilih periode, bagian 4-5 untuk pembuatan peta, dan bagian 6 untuk ekspor.
+**Rujukan:** [11 GIS mapping](notebooks/11_gis_mapping/11_gis_mapping.ipynb), bagian 2 untuk penjelasan nama, bagian 3 untuk peta dasar dan pemilih periode, bagian 4-5 untuk pembuatan peta, dan bagian 6 untuk ekspor.
 
-### 13.1 Mengembalikan hasil ke lokasi
+### 14.1 Mengembalikan hasil ke lokasi
 
 Label hasil model dihubungkan kembali ke `grid_id` dan periode. Batas kotak dibangun dari proyeksi LAEA yang sama dengan preprocessing, sisi didensifikasi, lalu ditransformasi ke WGS84 agar dapat ditampilkan sebagai polygon pada peta. Warna mengikuti identitas kelompok yang sama sepanjang periode untuk metode tersebut.
 
 Daratan Natural Earth digunakan sebagai konteks visual. Daratan tidak digunakan untuk menyaring event atau melatih model. Leaflet, CSS, geometri daratan dan data peta disertakan dalam HTML, sehingga file peta dapat dibuka tanpa internet dan tidak meminta tile OpenStreetMap. Ini juga menghindari masalah tile 403 pada versi awal.
 
-### 13.2 Empat peta yang dihasilkan
+### 14.2 Enam peta yang dihasilkan
 
 | Peta | Pertanyaan yang dijawab | Buka file |
 | --- | --- | --- |
 | Profil K-Means per periode | Kotak ini paling mirip kelompok aktivitas yang mana? | [K-Means per triwulan](maps/kmeans_profiles_by_quarter.html) |
+| Profil K-Medoids per periode | Kotak ini paling dekat ke medoid kelompok yang mana? | [K-Medoids per triwulan](maps/kmedoids_profiles_by_quarter.html) |
 | Profil DBSCAN per periode | Kotak ini cocok dengan kelompok kepadatan historis yang mana? | [DBSCAN per triwulan](maps/dbscan_profiles_by_quarter.html) |
 | Perubahan K-Means 2021-2025 | Berapa kali kotak berganti kelompok pada pasangan triwulan layak? | [Perubahan K-Means](maps/kmeans_profile_changes_2021_2025.html) |
+| Perubahan K-Medoids 2021-2025 | Berapa kali kotak berganti kelompok pada pasangan triwulan layak? | [Perubahan K-Medoids](maps/kmedoids_profile_changes_2021_2025.html) |
 | Perubahan DBSCAN 2021-2025 | Berapa kali kotak berganti kelompok, dengan noise dikeluarkan? | [Perubahan DBSCAN](maps/dbscan_profile_changes_2021_2025.html) |
 
 Masing-masing peta profil menyediakan **24 pilihan periode**: 20 quarter historis, tiga quarter testing lengkap, dan satu quarter parsial. Satu layer periode ditampilkan pada satu waktu. Nama quarter ditulis sebagai rentang bulan. Zoom awal menyesuaikan bounding box; tombol +/- dapat dipakai untuk memperbesar dan memperkecil.
 
 Semua peta memiliki tombol **Sembunyikan grid / Tampilkan grid** di kiri bawah. Tombol ini menyembunyikan atau menampilkan seluruh kotak hasil analisis, sementara daratan tetap terlihat. Pada peta profil, mengganti periode saat grid disembunyikan tidak memunculkannya kembali; tombol Tampilkan grid akan menampilkan periode terakhir yang dipilih.
 
-### 13.3 Membaca peta profil
+### 14.3 Membaca peta profil
 
 1. Pilih periode, misalnya Juli-September 2026.
 2. Baca warna melalui nama deskriptif pada legenda. Huruf kelompok adalah pengenal, bukan peringkat rendah sampai tinggi.
@@ -592,19 +675,19 @@ Semua peta memiliki tombol **Sembunyikan grid / Tampilkan grid** di kiri bawah. 
 
 Tidak ada gempa tercatat berarti tidak ada event di atas ambang pada katalog dan periode itu. Tidak masuk kelompok DBSCAN berarti status historis noise; belum cocok berarti data testing tidak mempunyai satu kelompok core yang cocok; ambigu berarti lebih dari satu kelompok core cocok. Daerah tanpa kotak berada di luar universe grid yang pernah aktif pada cakupan yang digunakan, bukan otomatis wilayah aman.
 
-### 13.4 Membaca peta perubahan
+### 14.4 Membaca peta perubahan
 
 Biru berarti nol pergantian pada pasangan yang dapat dibandingkan. Kuning berarti 1-2 pergantian. Jingga tua berarti lebih dari 2 pergantian. Abu-abu berarti belum ada pasangan periode yang layak dibandingkan. Arahkan kursor ke kotak untuk melihat jumlah pergantian, denominator pasangan, stability rate, dan durasi terpanjang.
 
 Satu pergantian dari satu pasangan memberi dukungan yang berbeda dari satu pergantian dari 19 pasangan. Perubahan warna di peta profil maupun banyaknya pergantian di peta perubahan tidak langsung menyatakan kenaikan bahaya gempa.
 
-### 13.5 Ekspor untuk GIS lain
+### 14.5 Ekspor untuk GIS lain
 
-Geometri tersedia sebagai [grid K-Means GeoJSON](maps/kmeans_grid_geometry.geojson) dan [grid DBSCAN GeoJSON](maps/dbscan_grid_geometry.geojson). Keduanya memakai universe geometri yang sama pada resolusi utama; label dan statistik per periode tetap berada dalam CSV masing-masing metode. Join dilakukan dengan `grid_id`, lalu pilih periode sebelum memetakan. Kedua file geometri bukan dua sistem grid spasial yang berbeda.
+Geometri tersedia sebagai [grid K-Means GeoJSON](maps/kmeans_grid_geometry.geojson), [grid K-Medoids GeoJSON](maps/kmedoids_grid_geometry.geojson), dan [grid DBSCAN GeoJSON](maps/dbscan_grid_geometry.geojson). Ketiganya memakai universe geometri yang sama pada resolusi utama; label dan statistik per periode tetap berada dalam CSV masing-masing metode. Join dilakukan dengan `grid_id`, lalu pilih periode sebelum memetakan. Ketiga file geometri bukan tiga sistem grid spasial yang berbeda.
 
-Pratinjau statis dapat dibuka melalui [K-Means](reports/figures/kmeans_map_preview.png) dan [DBSCAN](reports/figures/dbscan_map_preview.png). Kode kelompok pada pratinjau dapat dicocokkan dengan tabel bagian 9; HTML menggunakan legenda deskriptif yang lebih lengkap.
+Pratinjau statis dapat dibuka melalui [K-Means](reports/figures/kmeans_map_preview.png), [K-Medoids](reports/figures/kmedoids_map_preview.png), dan [DBSCAN](reports/figures/dbscan_map_preview.png). Kode kelompok pada pratinjau dapat dicocokkan dengan tabel bagian 10; HTML menggunakan legenda deskriptif yang lebih lengkap.
 
-## 14. Verifikasi eksekusi
+## 15. Verifikasi eksekusi
 
 **Rujukan:** [00 Panduan](notebooks/00_panduan.ipynb), [laporan eksekusi notebook](reports/validation/notebook_execution.json), dan [pemeriksaan environment](reports/validation/environment.json).
 ''')
@@ -624,21 +707,21 @@ Pratinjau statis dapat dibuka melalui [K-Means](reports/figures/kmeans_map_previ
 
 Bukti pendukung: [tests.xml](reports/validation/tests.xml), [integritas data](reports/validation/data_integrity.json), [kontrol peta](reports/validation/map_selector.json), [penamaan notebook](reports/validation/notebook_naming.json), dan [dependensi terkunci](requirements-lock.txt). Label, statistik dan data diuji tetap sama saat penjelasan nama ditambahkan.
 
-## 15. Temuan dan batas kesimpulan
+## 16. Temuan dan batas kesimpulan
 
-### 15.1 Pernyataan yang didukung hasil saat ini
+### 16.1 Pernyataan yang didukung hasil saat ini
 
 Pengumpulan berhasil memperoleh {number(len(raw))} catatan API, yang setelah pemeriksaan menghasilkan {number(len(clean))} kejadian bersih. Analisis M>=3 mengagregasi {number(len(included))} event menjadi panel grid-triwulan. Model historis memakai {number(len(train))} observasi layak pada 2021-2025.
 
-K-Means memilih k=6 menurut aturan kandidat dan mean Silhouette yang digunakan. DBSCAN memilih eps {number(db_meta['eps'], 6)} dan min_samples {db_meta['min_samples']}, menghasilkan tujuh cluster serta noise {pct(db_selected['noise_fraction'])}. Pada subset identik training, K-Means mempunyai Silhouette lebih tinggi dan DBI lebih rendah. Kelompok tersebut dapat disajikan melalui nama deskriptif yang didasarkan pada statistik training.
+K-Means memilih k=6 menurut aturan kandidat dan mean Silhouette yang digunakan. DBSCAN memilih eps {number(db_meta['eps'], 6)} dan min_samples {db_meta['min_samples']}, menghasilkan tujuh cluster serta noise {pct(db_selected['noise_fraction'])}. K-Medoids memilih k={kd_meta['selected_k']} dengan aturan yang sama. Pada subset identik training, K-Means dan K-Medoids seri pada Silhouette (selisih lebih kecil daripada simpangan baku antarsampel), K-Means lebih baik pada DBI dan Calinski-Harabasz, dan K-Means unggul pada seluruh ukuran saat k disamakan; DBSCAN terendah pada semua ukuran internal. Kelompok tersebut dapat disajikan melalui nama deskriptif yang didasarkan pada statistik training.
 
 Analisis historis telah menghasilkan riwayat, transisi, durasi dan stability rate. Pengujian 2026 menggunakan model historis tanpa fit ulang, membedakan quarter lengkap dan parsial serta menangani kondisi yang tidak cocok atau ambigu. GIS menyajikan hasil pada polygon dengan pilihan periode dan peta pergantian kelompok.
 
-### 15.2 Hal yang masih membatasi kekuatan penelitian
+### 16.2 Hal yang masih membatasi kekuatan penelitian
 
 1. **Dukungan event rendah:** {pct(low_support)} observasi training hanya berisi 1-4 event. Banyak mean, maksimum dan proporsi belum merupakan ringkasan wilayah yang kuat.
 2. **Sensitif terhadap resolusi dan minimum event:** ARI turun saat ukuran grid atau dukungan minimal diubah. Hasil belum stabil untuk semua pilihan metodologi.
-3. **k=6 belum mutlak:** skor k=2 berdekatan. Pilihan enam kelompok harus disajikan sebagai hasil aturan eksperimen sekarang.
+3. **k=6 belum mutlak:** skor k=2 berdekatan. Pilihan enam kelompok harus disajikan sebagai hasil aturan eksperimen sekarang. K-Medoids memilih k=2 dengan aturan yang sama, sehingga pilihan jumlah kelompok sangat bergantung pada kriteria seleksi.
 4. **Kelengkapan dan jenis magnitudo:** ambang M>=3 belum membuktikan completeness, dan magnitudo belum dihomogenisasi. Perubahan katalog dapat memengaruhi profil temporal.
 5. **Korelasi fitur dan kebijakan DBSCAN:** fitur masih berkorelasi dan screening memengaruhi kelompok terpilih. Hasil bergantung pada keputusan analitis yang dinyatakan terbuka.
 6. **Dukungan temporal tidak merata:** hanya pasangan assigned yang dibandingkan; median pasangan per grid rendah. Pergantian label belum otomatis perubahan fisik yang bermakna.
@@ -647,7 +730,7 @@ Analisis historis telah menghasilkan riwayat, transisi, durasi dan stability rat
 
 Hasil ini dapat digunakan sebagai **analisis eksploratif profil aktivitas yang tercatat dalam katalog**. Untuk memperkuat naskah ilmiah, prioritasnya adalah justifikasi completeness/jenis magnitudo, pengaruh pemilihan fitur, kecukupan event per unit, sensitivitas spasial, serta ketidakpastian transisi. Tidak ada klaim novelty atau perubahan tektonik kausal hanya dari berhasilnya dashboard dan clustering.
 
-## 16. Daftar keluaran dan referensi
+## 17. Daftar keluaran dan referensi
 
 | Kelompok file | Lokasi | Isi |
 | --- | --- | --- |
@@ -655,13 +738,14 @@ Hasil ini dapat digunakan sebagai **analisis eksploratif profil aktivitas yang t
 | Raw | [data/raw](data/raw/) | Respons bulanan, CSV dan manifest |
 | Preprocessing | [data/processed](data/processed/) | Event bersih/ditolak, panel, scaler dan fitur standar |
 | K-Means | [models/kmeans](models/kmeans/) | Model, seluruh kandidat, label dan profil |
+| K-Medoids | [models/kmedoids](models/kmedoids/) | Model, kontrol k sama dengan K-Means, seluruh kandidat, label, profil dan medoid |
 | DBSCAN | [models/dbscan](models/dbscan/) | Model, seluruh kandidat, noise dan profil |
 | Evaluasi | [reports/evaluation](reports/evaluation/) | Audit katalog, korelasi, nama dan perbandingan |
 | Temporal | [reports/temporal](reports/temporal/) | Riwayat, transisi, stability rate dan durasi |
 | Sensitivitas | [reports/stability](reports/stability/) | ARI parameter, grid, magnitudo dan dukungan event |
 | Testing | [reports/testing_2026](reports/testing_2026/) | Label 2026, quarter lengkap/parsial, drift dan baseline |
 | Grafik | [reports/figures](reports/figures/) | EDA, pilihan k, k-distance, PCA, transisi dan pratinjau peta |
-| GIS | [maps](maps/) | Empat HTML peta dan dua geometri GeoJSON |
+| GIS | [maps](maps/) | Enam HTML peta dan tiga geometri GeoJSON |
 | Verifikasi | [reports/validation](reports/validation/) | Status notebook, pengujian, environment dan integritas |
 
 **Rujukan penjelasan internal:** [metodologi dan batas interpretasi](docs/metodologi.md), [panduan membaca hasil](docs/cara_menjelaskan_hasil.md), dan [README proyek](README.md).
@@ -696,11 +780,11 @@ def verify_report(content):
             nb = json.loads(path.read_text(encoding="utf-8"))
             assert any(f'id="{anchor}"' in "".join(c["source"]) for c in nb["cells"]), target
         local_links.append(target)
-    assert len(re.findall(r"^## \d+\.", content, re.M)) == 16
+    assert len(re.findall(r"^## \d+\.", content, re.M)) == 17
     assert "78.265" in content and "78.213" in content and "50.198" in content
     source_hashes = {relative: hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() for relative in sorted(READ_FILES)}
     receipt = {"status": "PASS", "report": OUTPUT.name, "local_links_checked": len(local_links),
-               "numbered_sections": 16, "source_sha256": source_hashes,
+               "numbered_sections": 17, "source_sha256": source_hashes,
                "report_sha256": hashlib.sha256(OUTPUT.read_bytes()).hexdigest(),
                "scope": "Angka dibaca dari artefak aktual dan tautan lokal/anchor notebook diperiksa; tidak menjalankan ulang model."}
     (ROOT / "reports/validation/full_report.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")

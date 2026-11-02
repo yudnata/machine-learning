@@ -17,6 +17,19 @@
       "tile_requests": 0
     },
     {
+      "method": "kmedoids",
+      "status": "PASS",
+      "period_count": 24,
+      "selector_one_active_layer": "PASS",
+      "grid_toggle": "PASS",
+      "period_change_while_hidden": "PASS",
+      "changes_map_grid_toggle": "PASS",
+      "basemap_stays_visible": "PASS",
+      "aria_label": "PASS",
+      "offline_assets": "PASS",
+      "tile_requests": 0
+    },
+    {
       "method": "dbscan",
       "status": "PASS",
       "period_count": 24,

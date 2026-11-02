@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+import itertools
 from pathlib import Path
 
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import adjusted_rand_score
+from sklearn.metrics import adjusted_rand_score, calinski_harabasz_score
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.preprocessing import StandardScaler
 from threadpoolctl import threadpool_limits
 
 from .common import ROOT, load_model, load_prepared, write_json
+from .kmedoids import KMedoids
 from .modeling import cluster_metrics
 from .preprocessing import grid_panel
 
@@ -60,28 +63,82 @@ def eda(root=ROOT):
     return annual, pd.DataFrame(thresholds)
 
 
+def calinski_harabasz(X, labels):
+    X, labels = np.asarray(X), np.asarray(labels)
+    assigned = labels >= 0
+    if len(np.unique(labels[assigned])) < 2:
+        return np.nan
+    return float(calinski_harabasz_score(X[assigned], labels[assigned]))
+
+
 def evaluate(root=ROOT):
     root = Path(root)
     cfg, _, train, X, _, _ = load_prepared(root)
     km, _ = load_model(root, "kmeans")
+    kd, _ = load_model(root, "kmedoids")
     db, dbmeta = load_model(root, "dbscan")
+    models = [("kmeans", km.labels_), ("kmedoids", kd.labels_), ("dbscan", db.labels_)]
+    matched_path = root / "models/kmedoids/model_matched_k.joblib"
+    if matched_path.exists():
+        matched = joblib.load(matched_path)
+        if matched.n_clusters != kd.n_clusters:
+            models.append(("kmedoids_matched_k", matched.labels_))
     rows = []
-    for method, labels in [("kmeans", km.labels_), ("dbscan", db.labels_)]:
+    for method, labels in models:
         rows.append({"model": method, "evaluation_scope": "seluruh baris training layak; noise dikeluarkan dari metrik jarak",
-                     **cluster_metrics(X, labels, cfg["silhouette_sample_size"])})
+                     **cluster_metrics(X, labels, cfg["silhouette_sample_size"]), "calinski_harabasz": calinski_harabasz(X, labels)})
     common = db.labels_ >= 0
-    for method, labels in [("kmeans", km.labels_), ("dbscan", db.labels_)]:
+    for method, labels in models:
         if common.any():
             rows.append({"model": method, "evaluation_scope": "subset identik: baris training yang ditugaskan DBSCAN",
-                         **cluster_metrics(X[common], labels[common], cfg["silhouette_sample_size"])})
+                         **cluster_metrics(X[common], labels[common], cfg["silhouette_sample_size"]),
+                         "calinski_harabasz": calinski_harabasz(X[common], labels[common])})
     scores = pd.DataFrame(rows)
     scores["dbscan_diagnostic_only"] = dbmeta["diagnostic_only"]
     scores.to_csv(root / "reports/evaluation/model_comparison.csv", index=False)
     ari = adjusted_rand_score(km.labels_[common], db.labels_[common]) if common.sum() > 1 else None
-    write_json(root / "reports/evaluation/agreement.json", {"ari_common_assigned": ari,
+    pairwise = {}
+    for (name_a, labels_a), (name_b, labels_b) in itertools.combinations(models, 2):
+        pairwise[f"{name_a}_vs_{name_b}"] = {
+            "ari_all_rows": float(adjusted_rand_score(labels_a, labels_b)),
+            "ari_common_assigned": float(adjusted_rand_score(labels_a[common], labels_b[common])) if common.sum() > 1 else None}
+    write_json(root / "reports/evaluation/agreement.json", {"ari_common_assigned": ari, "pairwise_ari": pairwise,
                "n_common_assigned": int(common.sum()), "fraction_common_assigned": float(common.mean()),
                "meaning": "kesepakatan partisi, bukan akurasi terhadap ground truth"})
     return scores
+
+
+def subsample_stability(root=ROOT, fraction=.8):
+    """Fit ulang tiap model pada subsampel acak, lalu bandingkan dengan label referensi pada baris subsampel yang sama."""
+    root = Path(root)
+    cfg, _, _, X, _, _ = load_prepared(root)
+    km, _ = load_model(root, "kmeans")
+    kd, _ = load_model(root, "kmedoids")
+    db, _ = load_model(root, "dbscan")
+    reference = {"kmeans": km.labels_, "kmedoids": kd.labels_, "dbscan": db.labels_}
+
+    def refit(method, seed):
+        if method == "kmeans":
+            return KMeans(n_clusters=km.n_clusters, n_init=20, random_state=seed)
+        if method == "kmedoids":
+            return KMedoids(n_clusters=kd.n_clusters, random_state=seed)
+        return DBSCAN(eps=db.eps, min_samples=db.min_samples, n_jobs=1)
+
+    rows = []
+    with threadpool_limits(limits=2):
+        for seed in cfg["stability_seeds"]:
+            subset = np.sort(np.random.default_rng(seed).choice(len(X), int(fraction * len(X)), replace=False))
+            for method, labels in reference.items():
+                alternate = refit(method, seed).fit_predict(X[subset])
+                base = labels[subset]
+                both = (base >= 0) & (alternate >= 0)
+                rows.append({"method": method, "seed": seed, "n_rows": len(subset),
+                             "ari_including_noise": adjusted_rand_score(base, alternate),
+                             "ari_common_assigned": adjusted_rand_score(base[both], alternate[both]) if both.sum() > 1 else np.nan,
+                             "common_assigned_fraction": float(both.mean()), "n_clusters": len(set(alternate.tolist()) - {-1})})
+    result = pd.DataFrame(rows)
+    result.to_csv(root / "reports/evaluation/subsample_stability.csv", index=False)
+    return result
 
 
 def temporal_tables(labels):
@@ -123,12 +180,12 @@ def temporal(root=ROOT):
     root = Path(root)
     load_prepared(root)
     outputs = {}
-    for method in ["kmeans", "dbscan"]:
+    for method in ["kmeans", "kmedoids", "dbscan"]:
         load_model(root, method)
         labels = pd.read_csv(root / f"models/{method}/training_labels.csv")
         tables = temporal_tables(labels)
         output = root / f"reports/temporal/{method}"
-        output.mkdir(exist_ok=True)
+        output.mkdir(parents=True, exist_ok=True)
         for name, table in zip(["history", "grid_stability", "profile_transitions", "state_transitions", "profile_spells"], tables):
             table.to_csv(output / f"{name}.csv", index=name in ["profile_transitions", "state_transitions"])
         matrix = tables[2]
@@ -175,6 +232,7 @@ def testing_2026(root=ROOT):
     root = Path(root)
     cfg, panel, _, Xtrain, bundle, _ = load_prepared(root)
     km, _ = load_model(root, "kmeans")
+    kd, _ = load_model(root, "kmedoids")
     db, dbmeta = load_model(root, "dbscan")
     test = panel.loc[panel["split"].ne("train")].copy()
     eligible = test.loc[test["state"].eq("ELIGIBLE")].copy()
@@ -187,17 +245,24 @@ def testing_2026(root=ROOT):
         training_distances = km.transform(Xtrain).min(axis=1)
         threshold = float(np.quantile(training_distances, .99))
         db_labels, matches, core_distances = extend_dbscan(db, X)
+        kd_labels = kd.predict(X)
+        medoid_distances = kd.transform(X).min(axis=1)
+        medoid_threshold = float(np.quantile(kd.transform(Xtrain).min(axis=1), .99))
     predicted = eligible[["row_id"]].copy()
     predicted["kmeans_cluster"] = km_labels
     predicted["kmeans_profile"] = [f"KMEANS_P{label}" for label in km_labels]
     predicted["centroid_distance"] = distances
     predicted["outside_training_distance_q99"] = distances > threshold
+    predicted["kmedoids_cluster"] = kd_labels
+    predicted["kmedoids_profile"] = [f"KMEDOIDS_P{label}" for label in kd_labels]
+    predicted["medoid_distance"] = medoid_distances
+    predicted["kmedoids_outside_training_distance_q99"] = medoid_distances > medoid_threshold
     predicted["dbscan_cluster"] = db_labels
     predicted["dbscan_profile"] = ["AMBIGUOUS_CORE_MATCH" if x == -2 else "NO_CORE_MATCH" if x == -1 else f"DBSCAN_P{x}" for x in db_labels]
     predicted["matching_core_clusters"] = matches
     predicted["nearest_core_distance"] = core_distances
     test = test.merge(predicted, on="row_id", how="left", validate="one_to_one")
-    for method in ["kmeans", "dbscan"]:
+    for method in ["kmeans", "kmedoids", "dbscan"]:
         test[f"{method}_profile"] = test[f"{method}_profile"].fillna(test["state"])
     out = root / "reports/testing_2026"
     test.to_csv(out / "labels_all_2026.csv", index=False)
@@ -208,7 +273,7 @@ def testing_2026(root=ROOT):
         mask = eligible["split"].eq(split).to_numpy()
         if not mask.any():
             continue
-        for method, labels in [("kmeans", km_labels), ("dbscan_core_extension", db_labels)]:
+        for method, labels in [("kmeans", km_labels), ("kmedoids", kd_labels), ("dbscan_core_extension", db_labels)]:
             rows.append({"split": split, "method": method, "ambiguous_fraction": float((labels[mask] == -2).mean()),
                          **cluster_metrics(X[mask], labels[mask], cfg["silhouette_sample_size"])})
     metrics = pd.DataFrame(rows)
@@ -222,7 +287,7 @@ def testing_2026(root=ROOT):
                       "standardized_mean_shift": (complete[feature].mean()-train[feature].mean())/sd if sd else np.nan})
     pd.DataFrame(drift).to_csv(out / "feature_drift.csv", index=False)
     changes = []
-    for method in ["kmeans", "dbscan"]:
+    for method in ["kmeans", "kmedoids", "dbscan"]:
         last = pd.read_csv(root / f"models/{method}/training_labels.csv")
         last = last.loc[last["period"].eq("2025Q4"), ["grid_id", "profile"]].rename(columns={"profile": "previous_profile"})
         combined = test.merge(last, on="grid_id", how="left")
@@ -236,7 +301,8 @@ def testing_2026(root=ROOT):
     write_json(out / "methodology.json", {"train_period": "2021Q1-2025Q4", "test_end_exclusive_utc": cfg["test_end_exclusive"],
                "complete_quarters": sorted(test.loc[test["split"].eq("test"), "period"].unique().tolist()),
                "partial_quarters": sorted(test.loc[test["split"].eq("test_partial"), "period"].unique().tolist()),
-               "kmeans_distance_q99_training": threshold, "dbscan_method": "core-radius extension, bukan predict bawaan; beberapa cluster core dalam eps = ambigu",
+               "kmeans_distance_q99_training": threshold, "kmedoids_distance_q99_training": medoid_threshold,
+               "kmedoids_method": "medoid terdekat (Euclidean) pada ruang fitur standar training", "dbscan_method": "core-radius extension, bukan predict bawaan; beberapa cluster core dalam eps = ambigu",
                "dbscan_diagnostic_only": dbmeta["diagnostic_only"], "accuracy": "tidak dihitung karena tidak ada label ground truth"})
     return metrics, test
 
@@ -245,7 +311,17 @@ def stability(root=ROOT):
     root = Path(root)
     cfg, _, train, X, _, _ = load_prepared(root)
     km, _ = load_model(root, "kmeans")
+    kd, _ = load_model(root, "kmedoids")
     db, _ = load_model(root, "dbscan")
+
+    def alternate_model(method, seed=None):
+        seed = cfg["random_state"] if seed is None else seed
+        if method == "kmeans":
+            return KMeans(n_clusters=km.n_clusters, n_init=20, random_state=seed)
+        if method == "kmedoids":
+            return KMedoids(n_clusters=kd.n_clusters, random_state=seed)
+        return DBSCAN(eps=db.eps, min_samples=db.min_samples, n_jobs=1)
+
     rows = []
     with threadpool_limits(limits=2):
         for k in sorted(set([max(2, km.n_clusters-1), km.n_clusters, km.n_clusters+1])):
@@ -256,6 +332,15 @@ def stability(root=ROOT):
             labels = KMeans(n_clusters=km.n_clusters, n_init=20, random_state=seed).fit_predict(X)
             rows.append({"method": "kmeans", "perturbation": "random_seed", "value": seed, "n_same_rows": len(X),
                          "ari_all": adjusted_rand_score(km.labels_, labels), "ari_common_assigned": adjusted_rand_score(km.labels_, labels), "common_assigned_fraction": 1.0})
+        for k in sorted(set([max(2, kd.n_clusters-1), kd.n_clusters, kd.n_clusters+1])):
+            labels = KMedoids(n_clusters=k, random_state=cfg["random_state"]).fit(X).labels_
+            rows.append({"method": "kmedoids", "perturbation": "n_clusters", "value": k, "n_same_rows": len(X),
+                         "ari_all": adjusted_rand_score(kd.labels_, labels), "ari_common_assigned": adjusted_rand_score(kd.labels_, labels), "common_assigned_fraction": 1.0})
+        for seed in cfg["stability_seeds"]:
+            labels = KMedoids(n_clusters=kd.n_clusters, random_state=seed).fit(X).labels_
+            rows.append({"method": "kmedoids", "perturbation": "random_seed", "value": seed, "n_same_rows": len(X),
+                         "ari_all": adjusted_rand_score(kd.labels_, labels), "ari_common_assigned": adjusted_rand_score(kd.labels_, labels), "common_assigned_fraction": 1.0})
+
         for factor in [.8, 1.0, 1.2]:
             for min_samples in sorted(set([max(2, db.min_samples//2), db.min_samples, db.min_samples*2])):
                 labels = DBSCAN(eps=db.eps*factor, min_samples=min_samples, n_jobs=1).fit_predict(X)
@@ -274,9 +359,8 @@ def stability(root=ROOT):
             if len(subset)<=km.n_clusters:
                 continue
             xx=StandardScaler().fit_transform(subset[cfg["features"]])
-            for method,reference in [("kmeans",km.labels_),("dbscan",db.labels_)]:
-                model=KMeans(n_clusters=km.n_clusters,n_init=20,random_state=cfg["random_state"]) if method=="kmeans" else DBSCAN(eps=db.eps,min_samples=db.min_samples,n_jobs=1)
-                alternate=model.fit_predict(xx)
+            for method,reference in [("kmeans",km.labels_),("kmedoids",kd.labels_),("dbscan",db.labels_)]:
+                alternate=alternate_model(method).fit_predict(xx)
                 common=(reference[mask]>=0)&(alternate>=0)
                 support_rows.append({"method":method,"min_events_per_quarter":minimum_count,"n_same_grid_quarters":int(mask.sum()),
                                      "fraction_reference_rows":mask.mean(),"n_clusters":len(set(alternate)-{-1}),"noise_fraction":float((alternate<0).mean()),
@@ -304,7 +388,7 @@ def stability(root=ROOT):
     reference_events = pd.read_csv(root / "data/processed/events_with_grid.csv")
     reference_events = reference_events.loc[reference_events["year"].between(2021,2025)]
     reference_events["row_id"] = reference_events["grid_id"] + "|" + reference_events["period"]
-    base = reference_events[["event_key", "row_id"]].merge(train[["row_id"]].assign(kmeans=km.labels_, dbscan=db.labels_), on="row_id", how="inner")
+    base = reference_events[["event_key", "row_id"]].merge(train[["row_id"]].assign(kmeans=km.labels_, kmedoids=kd.labels_, dbscan=db.labels_), on="row_id", how="inner")
     tests = [("grid_km", size) for size in cfg["grid_sensitivity_km"]]
     tests += [("min_magnitude", value) for value in cfg["magnitude_sensitivity"]]
     resolution_rows = []
@@ -318,9 +402,8 @@ def stability(root=ROOT):
             xx = StandardScaler().fit_transform(alt_train[cfg["features"]])
             alt_events = alt_events.loc[alt_events["year"].between(2021,2025)].copy()
             alt_events["row_id"] = alt_events["grid_id"] + "|" + alt_events["period"]
-            for method, ref_model in [("kmeans",km),("dbscan",db)]:
-                model = KMeans(n_clusters=km.n_clusters, n_init=20, random_state=cfg["random_state"]) if method=="kmeans" else DBSCAN(eps=db.eps, min_samples=db.min_samples, n_jobs=1)
-                labels = model.fit_predict(xx)
+            for method in ["kmeans", "kmedoids", "dbscan"]:
+                labels = alternate_model(method).fit_predict(xx)
                 membership = alt_events[["event_key", "row_id"]].merge(alt_train[["row_id"]].assign(alternate_label=labels), on="row_id", how="inner")
                 common = base[["event_key",method]].merge(membership[["event_key","alternate_label"]], on="event_key", validate="one_to_one")
                 assigned = common[method].ge(0) & common["alternate_label"].ge(0)

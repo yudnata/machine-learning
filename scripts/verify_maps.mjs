@@ -39,7 +39,7 @@ function gridHarness(html) {
   return {nodes,active,land,map,context,button};
 }
 
-for (const method of ['kmeans','dbscan']) {
+for (const method of ['kmeans','kmedoids','dbscan']) {
   const html=fs.readFileSync(path.join(root,'maps',`${method}_profiles_by_quarter.html`),'utf8');
   for (const file of [`${method}_profiles_by_quarter.html`,`${method}_profile_changes_2021_2025.html`]) {
     const content=fs.readFileSync(path.join(root,'maps',file),'utf8');

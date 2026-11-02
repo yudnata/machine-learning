@@ -1,0 +1,44 @@
+{
+  "KMEDOIDS_P0": {
+    "name": "Kelompok A: Profil kedalaman rata-rata dangkal, frekuensi relatif tinggi, magnitudo relatif rendah",
+    "detail": "Rata-rata 2,79 kejadian / 3 bulan; magnitudo 3,64; kedalaman 23 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
+    "color": "#0072B2"
+  },
+  "KMEDOIDS_P1": {
+    "name": "Kelompok B: Profil kedalaman rata-rata menengah, frekuensi relatif rendah, magnitudo relatif tinggi",
+    "detail": "Rata-rata 2,37 kejadian / 3 bulan; magnitudo 3,93; kedalaman 192 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
+    "color": "#D55E00"
+  },
+  "NO_EVENTS": {
+    "name": "Tidak ada gempa tercatat dengan magnitudo minimal 3",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#ededed"
+  },
+  "INCOMPLETE_FEATURES": {
+    "name": "Data belum cukup untuk menentukan kelompok",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#999999"
+  },
+  "NOISE": {
+    "name": "Tidak masuk kelompok historis DBSCAN",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#333333"
+  },
+  "NO_CORE_MATCH": {
+    "name": "Belum cocok dengan kelompok historis",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#333333"
+  },
+  "AMBIGUOUS_CORE_MATCH": {
+    "name": "Cocok dengan lebih dari satu kelompok",
+    "detail": "Status data atau pencocokan model; bukan tingkat bahaya.",
+    "source": "Status pipeline",
+    "color": "#b58900"
+  }
+}

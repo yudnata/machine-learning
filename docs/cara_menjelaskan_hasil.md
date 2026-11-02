@@ -12,17 +12,20 @@ Nama itu merangkum hasil yang sudah terbentuk. Nama tersebut tidak dipakai untuk
 
 - **04 K-Means, bagian 6: Penamaan dan interpretasi kelompok (setelah clustering).** Bagian ini mendefinisikan aturan pada fungsi `profile_descriptions()`. Bagian 7 menjalankan penamaan dan menampilkan tabel kode, nama, serta statistik dasarnya.
 - **05 DBSCAN, bagian 5: Penamaan dan interpretasi kelompok (setelah clustering).** Bagian ini mendefinisikan aturan nama. Bagian 6 menjalankannya dan menampilkan tabel nama serta statistik dasar untuk DBSCAN, termasuk status tidak masuk kelompok.
-- Notebook **06** memakai nama yang sama untuk perbandingan profil; **07** untuk riwayat; **09** untuk testing; **10** untuk legenda dan popup peta.
+- **06 K-Medoids, bagian 7-8:** aturan nama yang sama diterapkan pada kelompok K-Medoids. Karena pusat K-Medoids adalah observasi nyata, notebook ini juga menampilkan medoid (kotak dan triwulan contoh) untuk tiap kelompok.
+- Notebook **07** memakai nama yang sama untuk perbandingan profil; **08** untuk riwayat; **10** untuk testing; **11** untuk legenda dan popup peta.
 
-Kode pendukung bersama ada di `src/mapping.py` pada fungsi `profile_descriptions()` dan `profile_interpretation_table()`. Notebook 04/05 menampilkan definisi fungsi itu secara penuh agar proses penamaannya dapat diperiksa. Semua nama dihitung dari statistik training, tidak dari data testing. Tabel hasil penamaan disimpan sebagai `reports/evaluation/kmeans_profile_interpretation.csv` dan `dbscan_profile_interpretation.csv`.
+Kode pendukung bersama ada di `src/mapping.py` pada fungsi `profile_descriptions()` dan `profile_interpretation_table()`. Notebook 04/05/06 menampilkan definisi fungsi itu secara penuh agar proses penamaannya dapat diperiksa. Semua nama dihitung dari statistik training, tidak dari data testing. Tabel hasil penamaan disimpan sebagai `reports/evaluation/kmeans_profile_interpretation.csv`, `kmedoids_profile_interpretation.csv`, dan `dbscan_profile_interpretation.csv`.
 
 ## Kalimat untuk presentasi
 
-> Kami mengelompokkan kotak wilayah berdasarkan kemiripan aktivitas gempa, meliputi frekuensi kejadian, rata-rata dan maksimum magnitudo, rata-rata kedalaman, serta proporsi kejadian dangkal. Kelompok dibentuk oleh K-Means dan DBSCAN dari data 2021-2025. Setelah itu, kami memberi nama deskriptif berdasarkan karakteristik rata-rata setiap kelompok. Model historis kemudian diterapkan pada data 2026 untuk melihat kecocokan profil pada periode baru.
+> Kami mengelompokkan kotak wilayah berdasarkan kemiripan aktivitas gempa, meliputi frekuensi kejadian, rata-rata dan maksimum magnitudo, rata-rata kedalaman, serta proporsi kejadian dangkal. Kelompok dibentuk oleh K-Means, K-Medoids, dan DBSCAN dari data 2021-2025. Setelah itu, kami memberi nama deskriptif berdasarkan karakteristik rata-rata setiap kelompok. Model historis kemudian diterapkan pada data 2026 untuk melihat kecocokan profil pada periode baru.
 
 K-Means menghasilkan enam kelompok menurut aturan seleksi yang digunakan. Jumlah enam bukan ditetapkan agar mewakili enam kategori bahaya; kandidat k=2 sampai 8 dibandingkan memakai evaluasi training. Hasil k=6 dan k=2 mempunyai Silhouette yang berdekatan, sehingga enam kelompok masih pilihan eksploratif yang perlu dibaca bersama sensitivitas.
 
-DBSCAN menghasilkan tujuh kelompok dalam konfigurasi terpilih, ditambah status untuk data yang tidak masuk kelompok. Pengujian DBSCAN pada 2026 menggunakan aturan tambahan kedekatan ke core points historis. Huruf kelompok hanya pengenal; Kelompok A K-Means tidak sama dengan Kelompok A DBSCAN.
+K-Medoids (PAM) dengan aturan seleksi yang sama memilih dua kelompok yang terutama memisahkan kedalaman. Pada jumlah kelompok yang disamakan dengan K-Means, K-Means lebih baik pada Silhouette, DBI, dan Calinski-Harabasz, sehingga K-Means dipilih sebagai model utama; ringkasan peringkat ada di notebook 07. Nilai tambah K-Medoids adalah pusat kelompok berupa kotak-triwulan nyata yang dapat ditelusuri.
+
+DBSCAN menghasilkan tujuh kelompok dalam konfigurasi terpilih, ditambah status untuk data yang tidak masuk kelompok. Pengujian DBSCAN pada 2026 menggunakan aturan tambahan kedekatan ke core points historis. Huruf kelompok hanya pengenal; Kelompok A pada satu metode tidak sama dengan Kelompok A pada metode lain.
 
 ## Cara membaca peta profil
 

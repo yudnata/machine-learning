@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import joblib
@@ -13,6 +14,7 @@ from sklearn.neighbors import NearestNeighbors
 from threadpoolctl import threadpool_limits
 
 from .common import ROOT, load_prepared, save_model_metadata
+from .kmedoids import KMedoids
 
 
 def cluster_metrics(X, labels, sample_size=2000, seed=42):
@@ -109,6 +111,75 @@ def fit_kmeans(root=ROOT):
     fig.savefig(root / "reports/figures/kmeans_selection.png", dpi=160)
     plt.close(fig)
     save_cluster_plot(root, "kmeans", X, model.labels_)
+    return scores, result
+
+
+def export_kmedoids_matched_tables(directory, panel, train, model, features):
+    """Export profiles and medoids for the fixed-k comparison model."""
+    directory = Path(directory)
+    labels = full_labels(panel, train, model.labels_, "kmedoids_matched_k")
+    labels.to_csv(directory / "training_labels_matched_k.csv", index=False)
+    profile_table(labels, features).to_csv(directory / "profiles_matched_k.csv", index=False)
+    columns = ["row_id", "grid_id", "period", "earthquake_count", "frequency_per_month"] + features
+    medoids = train.iloc[model.medoid_indices_][columns].copy()
+    medoids.insert(0, "cluster", range(len(medoids)))
+    medoids.to_csv(directory / "medoids_matched_k.csv", index=False)
+    return labels
+
+
+def fit_kmedoids(root=ROOT):
+    root = Path(root)
+    cfg, panel, train, X, _, meta = load_prepared(root)
+    rows, fitted = [], {}
+    unique_count = len(np.unique(X, axis=0))
+    with threadpool_limits(limits=2):
+        for k in cfg["k_candidates"]:
+            if not 2 <= k < min(len(X), unique_count + 1):
+                continue
+            model = KMedoids(n_clusters=k, random_state=cfg["random_state"]).fit(X)
+            fitted[k] = model
+            metrics = cluster_metrics(X, model.labels_, cfg["silhouette_sample_size"])
+            repeat_scores = [cluster_metrics(X, model.labels_, cfg["silhouette_sample_size"], seed)["silhouette"] for seed in cfg["silhouette_seeds"]]
+            metrics["silhouette"] = float(np.nanmean(repeat_scores))
+            metrics["silhouette_std"] = float(np.nanstd(repeat_scores))
+            rows.append({"k": k, "total_distance": model.inertia_, "n_swaps": model.n_swaps_, **metrics})
+        scores = pd.DataFrame(rows)
+        valid = scores.loc[scores["silhouette"].notna()]
+        if valid.empty:
+            raise ValueError("K-Medoids tidak menghasilkan kandidat evaluasi yang valid.")
+        selected = valid.sort_values(["silhouette", "davies_bouldin", "k"], ascending=[False, True, True]).iloc[0]
+        model = fitted[int(selected["k"])]
+    kmeans_meta = root / "models/kmeans/metadata.json"
+    matched_k = json.loads(kmeans_meta.read_text(encoding="utf-8"))["selected_k"] if kmeans_meta.exists() else None
+    result = full_labels(panel, train, model.labels_, "kmedoids")
+    directory = root / "models/kmedoids"
+    directory.mkdir(parents=True, exist_ok=True)
+    scores.to_csv(directory / "parameter_search.csv", index=False)
+    result.to_csv(directory / "training_labels.csv", index=False)
+    profile_table(result, cfg["features"]).to_csv(directory / "profiles.csv", index=False)
+    medoids = train.iloc[model.medoid_indices_][["row_id", "grid_id", "period", "earthquake_count", "frequency_per_month"] + cfg["features"]].copy()
+    medoids.insert(0, "cluster", range(len(medoids)))
+    medoids.to_csv(directory / "medoids.csv", index=False)
+    joblib.dump(model, directory / "model.joblib")
+    matched_path = directory / "model_matched_k.joblib"
+    if matched_k in fitted:
+        matched_model = fitted[matched_k]
+        joblib.dump(matched_model, matched_path)
+        export_kmedoids_matched_tables(directory, panel, train, matched_model, cfg["features"])
+    elif matched_path.exists():
+        matched_path.unlink()
+    save_model_metadata(root, "kmedoids", meta, {"selected_k": int(selected["k"]), "matched_k_with_kmeans": matched_k if matched_k in fitted else None,
+                        "algorithm": "PAM: BUILD deterministik + SWAP FastPAM, jarak Euclidean",
+                        "selection": "rata-rata silhouette 3 sampel tertinggi; tie-break DBI terendah dan k terkecil", "fit_split": "train"})
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+    for ax, metric in zip(axes, ["total_distance", "silhouette", "davies_bouldin"]):
+        ax.plot(scores["k"], scores[metric], marker="o")
+        ax.axvline(int(selected["k"]), color="gray", ls="--")
+        ax.set(xlabel="k", ylabel=metric, title=metric)
+    fig.tight_layout()
+    fig.savefig(root / "reports/figures/kmedoids_selection.png", dpi=160)
+    plt.close(fig)
+    save_cluster_plot(root, "kmedoids", X, model.labels_)
     return scores, result
 
 

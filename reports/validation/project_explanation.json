@@ -2,9 +2,9 @@
   "status": "PASS",
   "report": "LAPORAN_ALUR_DAN_HASIL_PENELITIAN.md",
   "technical_report": "LAPORAN_TEKNIS_DAN_ANGKA.md",
-  "word_count": 2077,
-  "links_checked": 19,
+  "word_count": 2206,
+  "links_checked": 23,
   "all_notebooks_referenced": true,
   "example_grid": "5_-13",
-  "sha256": "2606807b9f9611926aba07fbe2843faeb85659e266feb6617f2f266a40bab373"
+  "sha256": "96d333d753dc6456640e2f37b6c4e9eb11ca9eb58b9e9cc4e85ee6f189f151de"
 }

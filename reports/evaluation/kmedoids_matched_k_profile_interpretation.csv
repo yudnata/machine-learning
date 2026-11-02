@@ -1,0 +1,7 @@
+Kode algoritma,Nama untuk menjelaskan hasil,Gempa per kotak per triwulan (rata-rata),Magnitudo (rata-rata),Kedalaman km (rata-rata),Jumlah kotak-periode pembentuk kelompok
+KMEDOIDS_MATCHED_K_P0,"Kelompok A: Profil kedalaman rata-rata dangkal, frekuensi relatif tinggi, magnitudo relatif sedang (2,21 kejadian/kotak-triwulan)",2.21,3.59,23.63,3300
+KMEDOIDS_MATCHED_K_P1,"Kelompok B: Profil kedalaman rata-rata menengah, frekuensi relatif sedang, magnitudo relatif tinggi",2.0,4.25,240.12,1823
+KMEDOIDS_MATCHED_K_P2,"Kelompok C: Profil kedalaman rata-rata dangkal, frekuensi relatif rendah, magnitudo relatif rendah",1.27,3.21,18.97,3088
+KMEDOIDS_MATCHED_K_P3,"Kelompok D: Profil kedalaman rata-rata menengah, frekuensi relatif sedang, magnitudo relatif rendah",1.48,3.38,152.74,1163
+KMEDOIDS_MATCHED_K_P4,"Kelompok E: Profil kedalaman rata-rata dangkal, frekuensi relatif tinggi, magnitudo relatif sedang (8,15 kejadian/kotak-triwulan)",8.15,3.72,40.61,2055
+KMEDOIDS_MATCHED_K_P5,"Kelompok F: Profil kedalaman rata-rata dangkal, frekuensi relatif rendah, magnitudo relatif tinggi",1.38,4.36,23.86,2042

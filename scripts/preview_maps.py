@@ -13,7 +13,7 @@ from src.mapping import profile_color
 
 
 def preview():
-    for method in ["kmeans","dbscan"]:
+    for method in ["kmeans","kmedoids","dbscan"]:
         geometry=json.loads((ROOT/f"maps/{method}_grid_geometry.geojson").read_text())
         shapes={f["id"]:f["geometry"]["coordinates"][0] for f in geometry["features"]}
         train=pd.read_csv(ROOT/f"models/{method}/training_labels.csv")

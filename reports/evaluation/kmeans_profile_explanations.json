@@ -1,38 +1,38 @@
 {
   "KMEANS_P0": {
-    "name": "Kelompok A: Cenderung dangkal, magnitudo sekitar 4,2",
-    "detail": "Rata-rata 1,7 kejadian / 3 bulan; magnitudo 4,2; kedalaman 23 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok A: Profil kedalaman rata-rata dangkal, frekuensi relatif sedang, magnitudo relatif sedang",
+    "detail": "Rata-rata 1,69 kejadian / 3 bulan; magnitudo 4,21; kedalaman 23 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#0072B2"
   },
   "KMEANS_P1": {
-    "name": "Kelompok B: Kedalaman sekitar 468 km, magnitudo 4,2",
-    "detail": "Rata-rata 1,2 kejadian / 3 bulan; magnitudo 4,2; kedalaman 468 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok B: Profil kedalaman rata-rata dalam, frekuensi relatif rendah, magnitudo relatif tinggi",
+    "detail": "Rata-rata 1,22 kejadian / 3 bulan; magnitudo 4,24; kedalaman 468 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#D55E00"
   },
   "KMEANS_P2": {
-    "name": "Kelompok C: Kedalaman sekitar 138 km, magnitudo 3,4",
-    "detail": "Rata-rata 1,7 kejadian / 3 bulan; magnitudo 3,4; kedalaman 138 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok C: Profil kedalaman rata-rata menengah, frekuensi relatif rendah, magnitudo relatif rendah",
+    "detail": "Rata-rata 1,65 kejadian / 3 bulan; magnitudo 3,41; kedalaman 138 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#009E73"
   },
   "KMEANS_P3": {
-    "name": "Kelompok D: Kedalaman sekitar 145 km, magnitudo 4,2",
-    "detail": "Rata-rata 2,4 kejadian / 3 bulan; magnitudo 4,2; kedalaman 145 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok D: Profil kedalaman rata-rata menengah, frekuensi relatif tinggi, magnitudo relatif tinggi",
+    "detail": "Rata-rata 2,41 kejadian / 3 bulan; magnitudo 4,23; kedalaman 145 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#CC79A7"
   },
   "KMEANS_P4": {
-    "name": "Kelompok E: Cenderung dangkal, magnitudo sekitar 3,4",
-    "detail": "Rata-rata 1,7 kejadian / 3 bulan; magnitudo 3,4; kedalaman 20 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok E: Profil kedalaman rata-rata dangkal, frekuensi relatif sedang, magnitudo relatif rendah",
+    "detail": "Rata-rata 1,68 kejadian / 3 bulan; magnitudo 3,35; kedalaman 20 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#E69F00"
   },
   "KMEANS_P5": {
-    "name": "Kelompok F: Kejadian lebih sering; cenderung dangkal",
-    "detail": "Rata-rata 8,9 kejadian / 3 bulan; magnitudo 3,7; kedalaman 38 km.",
-    "source": "Ringkasan statistik cluster historis 2021-2025, bukan kategori yang menentukan anggota cluster.",
+    "name": "Kelompok F: Profil kedalaman rata-rata dangkal, frekuensi relatif tinggi, magnitudo relatif sedang",
+    "detail": "Rata-rata 8,93 kejadian / 3 bulan; magnitudo 3,67; kedalaman 38 km.",
+    "source": "Deskripsi rerata training 2021-2025; rendah/sedang/tinggi berdasarkan peringkat kelompok dalam model yang sama, bukan tingkat bahaya atau kategori baku.",
     "color": "#56B4E9"
   },
   "NO_EVENTS": {

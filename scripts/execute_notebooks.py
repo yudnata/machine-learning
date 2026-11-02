@@ -14,8 +14,12 @@ ORIGINAL=ROOT.parent / "ml_20206 (1).ipynb"
 EXPECTED_ORIGINAL="ce01a450d6a9a56eb337ccf3906e6e5eafb1501951e907308cb8767fc6db2c97"
 
 
+def original_digest():
+    return hashlib.sha256(ORIGINAL.read_bytes()).hexdigest() if ORIGINAL.is_file() else None
+
+
 def execute():
-    original_hash=hashlib.sha256(ORIGINAL.read_bytes()).hexdigest()
+    original_hash=original_digest()
     report={"launcher_interpreter":sys.executable,"kernel":"seismic-python312","original_sha256_before":original_hash,
             "initial_reference_sha256":EXPECTED_ORIGINAL,"matches_initial_reference":original_hash==EXPECTED_ORIGINAL,"notebooks":[]}
     target=ROOT/"reports/validation/notebook_execution.json"
@@ -49,8 +53,9 @@ def execute():
         report["notebooks"].sort(key=lambda r:r["notebook"])
         target.write_text(json.dumps(report,indent=2),encoding="utf-8")
         print(f"PASS {path.name}: {result['seconds']} s",flush=True)
-    report["original_sha256_after"]=hashlib.sha256(ORIGINAL.read_bytes()).hexdigest()
+    report["original_sha256_after"]=original_digest()
     report["original_unchanged"]=report["original_sha256_after"]==original_hash
+    report["original_notebook_present"]=original_hash is not None
     report["status"]="PASS"
     target.write_text(json.dumps(report,indent=2),encoding="utf-8")
     print(f"Semua notebook lulus; hash notebook asli sama selama eksekusi: {report['original_unchanged']}.",flush=True)

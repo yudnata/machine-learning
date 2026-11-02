@@ -1,0 +1,3 @@
+cluster,row_id,grid_id,period,earthquake_count,frequency_per_month,log_frequency,avg_magnitude,max_magnitude,avg_depth,shallow_fraction
+0,46_1|2022Q1,46_1,2022Q1,2,0.6666666666666666,0.5108256237659907,3.6,3.8,21.0,1.0
+1,14_15|2023Q3,14_15,2023Q3,2,0.6666666666666666,0.5108256237659907,3.95,4.1,180.55,0.0
